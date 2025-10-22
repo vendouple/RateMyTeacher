@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\DATA SISWA SMA\\Nicholas XII-4\\RateMyTeacher\\RateMyTeacher\\RateMyTeacher.csproj",
+      "projectUniqueName": "D:\\DATA SISWA SMA\\Nicholas XII-4\\RateMyTeacher\\RateMyTeacher.csproj",
       "projectName": "RateMyTeacher",
-      "projectPath": "D:\\DATA SISWA SMA\\Nicholas XII-4\\RateMyTeacher\\RateMyTeacher\\RateMyTeacher.csproj",
+      "projectPath": "D:\\DATA SISWA SMA\\Nicholas XII-4\\RateMyTeacher\\RateMyTeacher.csproj",
       "packagesPath": "C:\\Users\\Siswa\\.nuget\\packages\\",
-      "outputPath": "D:\\DATA SISWA SMA\\Nicholas XII-4\\RateMyTeacher\\RateMyTeacher\\obj\\",
+      "outputPath": "D:\\DATA SISWA SMA\\Nicholas XII-4\\RateMyTeacher\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Siswa\\AppData\\Roaming\\NuGet\\NuGet.Config"
