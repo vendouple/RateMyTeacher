@@ -44,16 +44,13 @@ GEMINI_MODEL=gemini-2.5-flash
 ASPNETCORE_ENVIRONMENT=Development
 DATABASE_PATH=Data/ratemyteacher.db
 
-# Bonus Configuration
-FIRST_PLACE_BONUS=10.00
-SECOND_PLACE_BONUS=5.00
-MINIMUM_VOTES_THRESHOLD=20
-
 # AI Configuration
 AI_MAX_TOKENS=8192
 AI_TEMPERATURE=0.7
 AI_TIMEOUT_SECONDS=30
 ```
+
+**Note**: Bonus amounts and minimum rating thresholds are no longer configured here. They are managed through the admin settings interface and stored in the database for dynamic updates without restart.
 
 ### 1.3 .gitignore Updates
 
@@ -80,13 +77,12 @@ GEMINI_API_KEY=your_gemini_api_key_from_ai_google_dev
 GEMINI_MODEL=gemini-2.5-flash
 ASPNETCORE_ENVIRONMENT=Development
 DATABASE_PATH=Data/ratemyteacher.db
-FIRST_PLACE_BONUS=10.00
-SECOND_PLACE_BONUS=5.00
-MINIMUM_VOTES_THRESHOLD=20
 AI_MAX_TOKENS=8192
 AI_TEMPERATURE=0.7
 AI_TIMEOUT_SECONDS=30
 ```
+
+**Note**: Bonus configuration and minimum vote thresholds are now managed through the admin settings UI (stored in database), not environment variables. This allows dynamic configuration without application restart.
 
 ---
 
@@ -100,21 +96,35 @@ Create `Models/` folder structure:
 Models/
 ├── User.cs
 ├── Teacher.cs
+├── TeacherAbsence.cs      # NEW: Teacher attendance/absence tracking
 ├── Student.cs
 ├── Subject.cs
 ├── Class.cs
+├── Department.cs          # NEW: Optional departmental organization
 ├── Schedule.cs
 ├── Lesson.cs
 ├── LessonLog.cs
-├── Attendance.cs
+├── Attendance.cs          # Student attendance (per day)
 ├── Grade.cs
-├── Assignment.cs
+├── Assignment.cs          # Homework/assignments
+├── AssignmentSubmission.cs # NEW: Student file uploads
+├── ReadingAssignment.cs   # NEW: Pre-class reading tracking
+├── StudentNote.cs         # NEW: Student-shared notes
+├── ExtraClass.cs          # NEW: After-school meetings/sessions
 ├── Rating.cs
 ├── Feedback.cs
 ├── Announcement.cs
 ├── Resource.cs
 ├── Badge.cs
-└── Behavior.cs
+├── Behavior.cs
+├── SystemSetting.cs       # For app-wide settings
+├── BonusTier.cs           # For configurable bonus rules
+├── Permission.cs          # NEW: Permission definitions
+├── PermissionCategory.cs  # NEW: Permission grouping
+├── Role.cs                # NEW: Role templates
+├── RolePermission.cs      # NEW: Role-Permission mapping
+├── UserRole.cs            # NEW: User-Role assignments
+└── ClassPermission.cs     # NEW: Class-level permission overrides
 ```
 
 #### Example: Teacher.cs
@@ -230,6 +240,599 @@ namespace RateMyTeacher.Models
 }
 ```
 
+#### NEW: SystemSetting.cs
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+
+namespace RateMyTeacher.Models
+{
+    public class SystemSetting
+    {
+        [Key]
+        public int SettingId { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Key { get; set; } // e.g., "MinimumRatingsThreshold"
+
+        [Required]
+        [MaxLength(500)]
+        public string Value { get; set; } // Stored as string, parsed as needed
+
+        [MaxLength(1000)]
+        public string Description { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string DataType { get; set; } // "int", "decimal", "string", "bool"
+
+        public bool IsEditable { get; set; } = true;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? UpdatedAt { get; set; }
+    }
+}
+```
+
+#### NEW: BonusTier.cs
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RateMyTeacher.Models
+{
+    public class BonusTier
+    {
+        [Key]
+        public int BonusTierId { get; set; }
+
+        [Required]
+        public int RankStart { get; set; } // e.g., 1 for 1st place, 5 for 5th place
+
+        [Required]
+        public int RankEnd { get; set; } // e.g., 1 for single position, 10 for range (5th-10th)
+
+        [Required]
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal BonusAmount { get; set; } // e.g., 10.00, 5.00, 2.50
+
+        [MaxLength(200)]
+        public string Description { get; set; } // e.g., "First Place", "5th-10th Place"
+
+        public bool IsActive { get; set; } = true;
+
+        public int DisplayOrder { get; set; } // For UI sorting
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? UpdatedAt { get; set; }
+    }
+}
+```
+
+#### NEW: TeacherAbsence.cs (Phase 2)
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RateMyTeacher.Models
+{
+    public class TeacherAbsence
+    {
+        [Key]
+        public int AbsenceId { get; set; }
+
+        [Required]
+        public int TeacherId { get; set; }
+
+        [ForeignKey("TeacherId")]
+        public Teacher Teacher { get; set; }
+
+        [Required]
+        public DateTime AbsenceDate { get; set; }
+
+        [Required]
+        [MaxLength(500)]
+        public string Reason { get; set; }
+
+        [MaxLength(50)]
+        public string Status { get; set; } // "Pending", "Approved", "Rejected"
+
+        public int? ApprovedByUserId { get; set; } // Admin/Headmaster who approved
+
+        [ForeignKey("ApprovedByUserId")]
+        public User ApprovedBy { get; set; }
+
+        public DateTime? ApprovedAt { get; set; }
+
+        [MaxLength(500)]
+        public string AdminNotes { get; set; }
+
+        public bool SubstituteAssigned { get; set; } = false;
+
+        public int? SubstituteTeacherId { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+}
+```
+
+#### NEW: AssignmentSubmission.cs (Phase 3)
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RateMyTeacher.Models
+{
+    public class AssignmentSubmission
+    {
+        [Key]
+        public int SubmissionId { get; set; }
+
+        [Required]
+        public int AssignmentId { get; set; }
+
+        [ForeignKey("AssignmentId")]
+        public Assignment Assignment { get; set; }
+
+        [Required]
+        public int StudentId { get; set; }
+
+        [ForeignKey("StudentId")]
+        public Student Student { get; set; }
+
+        [MaxLength(500)]
+        public string FilePath { get; set; } // Uploaded file path
+
+        [MaxLength(200)]
+        public string FileName { get; set; }
+
+        [MaxLength(1000)]
+        public string Comments { get; set; }
+
+        public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+
+        [MaxLength(50)]
+        public string Status { get; set; } // "Submitted", "Graded", "Late"
+
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal? Score { get; set; }
+
+        [MaxLength(1000)]
+        public string TeacherFeedback { get; set; }
+
+        public DateTime? GradedAt { get; set; }
+    }
+}
+```
+
+#### NEW: ReadingAssignment.cs (Phase 3)
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RateMyTeacher.Models
+{
+    public class ReadingAssignment
+    {
+        [Key]
+        public int ReadingAssignmentId { get; set; }
+
+        [Required]
+        public int ClassId { get; set; }
+
+        [ForeignKey("ClassId")]
+        public Class Class { get; set; }
+
+        [Required]
+        public int TeacherId { get; set; }
+
+        [ForeignKey("TeacherId")]
+        public Teacher Teacher { get; set; }
+
+        [Required]
+        [MaxLength(500)]
+        public string Title { get; set; } // e.g., "Module B pages 25-41"
+
+        [MaxLength(2000)]
+        public string Description { get; set; }
+
+        [Required]
+        public DateTime DueDate { get; set; }
+
+        public DateTime? NextClassDate { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation
+        public ICollection<ReadingProgress> ReadingProgresses { get; set; }
+    }
+
+    public class ReadingProgress
+    {
+        [Key]
+        public int ProgressId { get; set; }
+
+        [Required]
+        public int ReadingAssignmentId { get; set; }
+
+        [ForeignKey("ReadingAssignmentId")]
+        public ReadingAssignment ReadingAssignment { get; set; }
+
+        [Required]
+        public int StudentId { get; set; }
+
+        [ForeignKey("StudentId")]
+        public Student Student { get; set; }
+
+        public bool IsCompleted { get; set; } = false;
+
+        public bool IsUnderstood { get; set; } = false;
+
+        public DateTime? CompletedAt { get; set; }
+
+        [MaxLength(1000)]
+        public string Notes { get; set; }
+    }
+}
+```
+
+#### NEW: StudentNote.cs (Phase 3)
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RateMyTeacher.Models
+{
+    public class StudentNote
+    {
+        [Key]
+        public int NoteId { get; set; }
+
+        [Required]
+        public int StudentId { get; set; }
+
+        [ForeignKey("StudentId")]
+        public Student Student { get; set; }
+
+        [Required]
+        public int SubjectId { get; set; }
+
+        [ForeignKey("SubjectId")]
+        public Subject Subject { get; set; }
+
+        [Required]
+        [MaxLength(300)]
+        public string Title { get; set; }
+
+        [Required]
+        public string Content { get; set; } // Markdown or rich text
+
+        [MaxLength(500)]
+        public string FilePath { get; set; } // Optional uploaded file
+
+        public int Views { get; set; } = 0;
+
+        public int Likes { get; set; } = 0;
+
+        public int Points { get; set; } = 0; // Gamification points
+
+        [MaxLength(500)]
+        public string Tags { get; set; } // Comma-separated tags
+
+        public bool IsPublic { get; set; } = true;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? UpdatedAt { get; set; }
+    }
+}
+```
+
+#### NEW: ExtraClass.cs (Phase 3)
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RateMyTeacher.Models
+{
+    public class ExtraClass
+    {
+        [Key]
+        public int ExtraClassId { get; set; }
+
+        [Required]
+        public int TeacherId { get; set; }
+
+        [ForeignKey("TeacherId")]
+        public Teacher Teacher { get; set; }
+
+        [Required]
+        public int SubjectId { get; set; }
+
+        [ForeignKey("SubjectId")]
+        public Subject Subject { get; set; }
+
+        [Required]
+        [MaxLength(300)]
+        public string Title { get; set; }
+
+        [MaxLength(1000)]
+        public string Description { get; set; }
+
+        [Required]
+        public DateTime ScheduledDateTime { get; set; }
+
+        public int DurationMinutes { get; set; } = 60;
+
+        [Required]
+        [MaxLength(50)]
+        public string Platform { get; set; } // "Google Meet", "Zoom", "Microsoft Teams"
+
+        [Required]
+        [MaxLength(500)]
+        public string MeetingLink { get; set; }
+
+        [MaxLength(100)]
+        public string MeetingId { get; set; }
+
+        [MaxLength(100)]
+        public string MeetingPassword { get; set; }
+
+        public int MaxStudents { get; set; } = 30;
+
+        public int EnrolledCount { get; set; } = 0;
+
+        [MaxLength(50)]
+        public string Status { get; set; } = "Scheduled"; // "Scheduled", "In Progress", "Completed", "Cancelled"
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation
+        public ICollection<ExtraClassEnrollment> Enrollments { get; set; }
+    }
+
+    public class ExtraClassEnrollment
+    {
+        [Key]
+        public int EnrollmentId { get; set; }
+
+        [Required]
+        public int ExtraClassId { get; set; }
+
+        [ForeignKey("ExtraClassId")]
+        public ExtraClass ExtraClass { get; set; }
+
+        [Required]
+        public int StudentId { get; set; }
+
+        [ForeignKey("StudentId")]
+        public Student Student { get; set; }
+
+        public DateTime EnrolledAt { get; set; } = DateTime.UtcNow;
+
+        public bool Attended { get; set; } = false;
+    }
+}
+```
+
+#### NEW: Permission System Models (Phase 2)
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace RateMyTeacher.Models
+{
+    // Department model (optional feature)
+    public class Department
+    {
+        [Key]
+        public int DepartmentId { get; set; }
+
+        [Required]
+        [MaxLength(200)]
+        public string Name { get; set; } // e.g., "Science Department", "Physics Department"
+
+        [MaxLength(1000)]
+        public string Description { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation
+        public ICollection<Class> Classes { get; set; }
+    }
+
+    // Permission Category (e.g., "Grades Management", "Attendance")
+    public class PermissionCategory
+    {
+        [Key]
+        public int CategoryId { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } // e.g., "Grades", "Attendance", "AI Companion"
+
+        [MaxLength(500)]
+        public string Description { get; set; }
+
+        public int DisplayOrder { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
+        // Navigation
+        public ICollection<Permission> Permissions { get; set; }
+    }
+
+    // Permission (granular actions like "View", "Edit", "Delete")
+    public class Permission
+    {
+        [Key]
+        public int PermissionId { get; set; }
+
+        [Required]
+        public int CategoryId { get; set; }
+
+        [ForeignKey("CategoryId")]
+        public PermissionCategory Category { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } // e.g., "View", "Edit", "Delete", "Create"
+
+        [Required]
+        [MaxLength(200)]
+        public string Code { get; set; } // e.g., "grades.view", "grades.edit", "attendance.mark"
+
+        [MaxLength(500)]
+        public string Description { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string Scope { get; set; } // "Global", "Department", "Class"
+
+        public bool IsActive { get; set; } = true;
+
+        public int DisplayOrder { get; set; }
+    }
+
+    // Role Template (e.g., "Admin", "Teacher", "Chemistry Viewer")
+    public class Role
+    {
+        [Key]
+        public int RoleId { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; }
+
+        [MaxLength(1000)]
+        public string Description { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string Scope { get; set; } // "Global", "Department", "Class"
+
+        public int? DepartmentId { get; set; } // Null for global roles
+
+        [ForeignKey("DepartmentId")]
+        public Department Department { get; set; }
+
+        public bool IsDefault { get; set; } = false; // True for Admin, Teacher, Student
+
+        public bool IsSystemRole { get; set; } = false; // Cannot be deleted
+
+        public bool IsActive { get; set; } = true;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation
+        public ICollection<RolePermission> RolePermissions { get; set; }
+        public ICollection<UserRole> UserRoles { get; set; }
+    }
+
+    // Role-Permission mapping (many-to-many)
+    public class RolePermission
+    {
+        [Key]
+        public int RolePermissionId { get; set; }
+
+        [Required]
+        public int RoleId { get; set; }
+
+        [ForeignKey("RoleId")]
+        public Role Role { get; set; }
+
+        [Required]
+        public int PermissionId { get; set; }
+
+        [ForeignKey("PermissionId")]
+        public Permission Permission { get; set; }
+
+        public bool IsGranted { get; set; } = true; // Allow explicit deny
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    // User-Role assignment (with optional class/department context)
+    public class UserRole
+    {
+        [Key]
+        public int UserRoleId { get; set; }
+
+        [Required]
+        public int UserId { get; set; }
+
+        [ForeignKey("UserId")]
+        public User User { get; set; }
+
+        [Required]
+        public int RoleId { get; set; }
+
+        [ForeignKey("RoleId")]
+        public Role Role { get; set; }
+
+        // Optional: Scope to specific class or department
+        public int? ClassId { get; set; }
+
+        [ForeignKey("ClassId")]
+        public Class Class { get; set; }
+
+        public int? DepartmentId { get; set; }
+
+        [ForeignKey("DepartmentId")]
+        public Department Department { get; set; }
+
+        public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
+
+        public int AssignedByUserId { get; set; }
+
+        public bool IsActive { get; set; } = true;
+    }
+
+    // Class-level permission overrides
+    public class ClassPermission
+    {
+        [Key]
+        public int ClassPermissionId { get; set; }
+
+        [Required]
+        public int ClassId { get; set; }
+
+        [ForeignKey("ClassId")]
+        public Class Class { get; set; }
+
+        [Required]
+        public int UserId { get; set; }
+
+        [ForeignKey("UserId")]
+        public User User { get; set; }
+
+        [Required]
+        public int PermissionId { get; set; }
+
+        [ForeignKey("PermissionId")]
+        public Permission Permission { get; set; }
+
+        public bool IsGranted { get; set; } = true;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public int CreatedByUserId { get; set; }
+    }
+}
+```
+
 ### 2.2 DbContext Configuration
 
 Create `Data/ApplicationDbContext.cs`:
@@ -265,6 +868,26 @@ namespace RateMyTeacher.Data
         public DbSet<Resource> Resources { get; set; }
         public DbSet<Badge> Badges { get; set; }
         public DbSet<Behavior> Behaviors { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
+        public DbSet<BonusTier> BonusTiers { get; set; }
+
+        // Phase 2/3 additions
+        public DbSet<TeacherAbsence> TeacherAbsences { get; set; }
+        public DbSet<AssignmentSubmission> AssignmentSubmissions { get; set; }
+        public DbSet<ReadingAssignment> ReadingAssignments { get; set; }
+        public DbSet<ReadingProgress> ReadingProgresses { get; set; }
+        public DbSet<StudentNote> StudentNotes { get; set; }
+        public DbSet<ExtraClass> ExtraClasses { get; set; }
+        public DbSet<ExtraClassEnrollment> ExtraClassEnrollments { get; set; }
+
+        // Permission System (Phase 2)
+        public DbSet<Department> Departments { get; set; }
+        public DbSet<PermissionCategory> PermissionCategories { get; set; }
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<ClassPermission> ClassPermissions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -274,6 +897,15 @@ namespace RateMyTeacher.Data
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
+
+            // SystemSetting - unique key
+            modelBuilder.Entity<SystemSetting>()
+                .HasIndex(s => s.Key)
+                .IsUnique();
+
+            // BonusTier - validate rank ranges
+            modelBuilder.Entity<BonusTier>()
+                .HasIndex(b => new { b.RankStart, b.RankEnd });
 
             // Rating table - One rating per student per teacher per semester
             modelBuilder.Entity<Rating>()
@@ -324,6 +956,52 @@ namespace RateMyTeacher.Data
                 new Badge { BadgeId = 3, Name = "Innovation Award", Description = "Creative teaching methods", IconUrl = "/images/badges/innovation.svg" },
                 new Badge { BadgeId = 4, Name = "Student Favorite", Description = "Consistently high ratings", IconUrl = "/images/badges/favorite.svg" }
             );
+
+            // Seed system settings
+            modelBuilder.Entity<SystemSetting>().HasData(
+                new SystemSetting
+                {
+                    SettingId = 1,
+                    Key = "MinimumRatingsThreshold",
+                    Value = "10",
+                    Description = "Minimum number of ratings required for a teacher to appear in rankings",
+                    DataType = "int",
+                    CreatedAt = DateTime.UtcNow
+                },
+                new SystemSetting
+                {
+                    SettingId = 2,
+                    Key = "SemesterDurationMonths",
+                    Value = "6",
+                    Description = "Duration of each semester in months",
+                    DataType = "int",
+                    CreatedAt = DateTime.UtcNow
+                }
+            );
+
+            // Seed default bonus tiers
+            modelBuilder.Entity<BonusTier>().HasData(
+                new BonusTier
+                {
+                    BonusTierId = 1,
+                    RankStart = 1,
+                    RankEnd = 1,
+                    BonusAmount = 10.00m,
+                    Description = "First Place",
+                    DisplayOrder = 1,
+                    CreatedAt = DateTime.UtcNow
+                },
+                new BonusTier
+                {
+                    BonusTierId = 2,
+                    RankStart = 2,
+                    RankEnd = 2,
+                    BonusAmount = 5.00m,
+                    Description = "Second Place",
+                    DisplayOrder = 2,
+                    CreatedAt = DateTime.UtcNow
+                }
+            );
         }
     }
 }
@@ -363,6 +1041,7 @@ builder.Services.AddScoped<IRatingService, RatingService>();
 builder.Services.AddScoped<IGradeService, GradeService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<ISettingsService, SettingsService>();        // NEW
 
 // Add session support
 builder.Services.AddDistributedMemoryCache();
@@ -417,13 +1096,22 @@ namespace RateMyTeacher.Services
 {
     public interface IGeminiService
     {
+        // Teacher tools
         Task<string> GenerateLessonSummary(string lessonContent, string topics);
         Task<string> GenerateQuizQuestions(string lessonContent, int numberOfQuestions);
-        Task<string> AnswerStudentQuestion(string question, string context);
         Task<string> SuggestLessonPlan(string subject, string previousTopics, string curriculum);
         Task<string> AnalyzeFeedbackSentiment(string feedback);
         Task<string> GenerateWeeklyReport(string teacherName, Dictionary<string, object> metrics);
         Task<List<string>> SuggestImprovementAreas(double rating, List<string> feedbackComments);
+
+        // Student AI Companion (Phase 3)
+        Task<string> ExplainConcept(string concept, string context, string difficultyLevel);
+        Task<string> GuideStudentToSolution(string problem, string studentAttempt);
+        Task<string> ShowAnswerOnly(string question, string context);
+        Task<string> SummarizeReadingMaterial(string content, int maxWords);
+        Task<bool> CheckReadingComprehension(string material, List<string> studentAnswers);
+        Task<string> SuggestStudyPlan(string subject, DateTime dueDate, List<string> topics);
+        Task<string> AnswerStudentQuestion(string question, string context);
     }
 }
 ```
@@ -650,9 +1338,435 @@ Format as JSON array:
 
 ---
 
-## 4. Key Controllers
+## 4. Settings Management Service
 
-### 4.1 Teachers Controller
+### 4.1 Settings Service Interface
+
+Create `Services/ISettingsService.cs`:
+
+```csharp
+namespace RateMyTeacher.Services
+{
+    public interface ISettingsService
+    {
+        // System Settings
+        Task<string> GetSettingValueAsync(string key);
+        Task<T> GetSettingValueAsync<T>(string key);
+        Task<bool> UpdateSettingAsync(string key, string value);
+        Task<List<SystemSetting>> GetAllSettingsAsync();
+
+        // Bonus Tiers
+        Task<List<BonusTier>> GetActiveBonusTiersAsync();
+        Task<BonusTier> GetBonusTierByIdAsync(int bonusTierId);
+        Task<bool> CreateBonusTierAsync(BonusTier bonusTier);
+        Task<bool> UpdateBonusTierAsync(BonusTier bonusTier);
+        Task<bool> DeleteBonusTierAsync(int bonusTierId);
+        Task<decimal> CalculateBonusForRank(int rank);
+        Task<Dictionary<int, decimal>> GetBonusDistributionAsync();
+
+        // Convenience methods
+        Task<int> GetMinimumRatingsThresholdAsync();
+        Task<bool> UpdateMinimumRatingsThresholdAsync(int threshold);
+    }
+}
+```
+
+### 4.2 Settings Service Implementation
+
+Create `Services/SettingsService.cs`:
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+using RateMyTeacher.Data;
+using RateMyTeacher.Models;
+
+namespace RateMyTeacher.Services
+{
+    public class SettingsService : ISettingsService
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly ILogger<SettingsService> _logger;
+
+        public SettingsService(ApplicationDbContext context, ILogger<SettingsService> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        // System Settings Methods
+        public async Task<string> GetSettingValueAsync(string key)
+        {
+            var setting = await _context.SystemSettings
+                .FirstOrDefaultAsync(s => s.Key == key);
+
+            return setting?.Value ?? string.Empty;
+        }
+
+        public async Task<T> GetSettingValueAsync<T>(string key)
+        {
+            var value = await GetSettingValueAsync(key);
+
+            if (string.IsNullOrEmpty(value))
+                return default(T);
+
+            try
+            {
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error converting setting {key} to type {typeof(T).Name}");
+                return default(T);
+            }
+        }
+
+        public async Task<bool> UpdateSettingAsync(string key, string value)
+        {
+            try
+            {
+                var setting = await _context.SystemSettings
+                    .FirstOrDefaultAsync(s => s.Key == key);
+
+                if (setting == null)
+                {
+                    _logger.LogWarning($"Setting {key} not found");
+                    return false;
+                }
+
+                if (!setting.IsEditable)
+                {
+                    _logger.LogWarning($"Setting {key} is not editable");
+                    return false;
+                }
+
+                setting.Value = value;
+                setting.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating setting {key}");
+                return false;
+            }
+        }
+
+        public async Task<List<SystemSetting>> GetAllSettingsAsync()
+        {
+            return await _context.SystemSettings
+                .OrderBy(s => s.Key)
+                .ToListAsync();
+        }
+
+        // Bonus Tier Methods
+        public async Task<List<BonusTier>> GetActiveBonusTiersAsync()
+        {
+            return await _context.BonusTiers
+                .Where(b => b.IsActive)
+                .OrderBy(b => b.DisplayOrder)
+                .ThenBy(b => b.RankStart)
+                .ToListAsync();
+        }
+
+        public async Task<BonusTier> GetBonusTierByIdAsync(int bonusTierId)
+        {
+            return await _context.BonusTiers
+                .FirstOrDefaultAsync(b => b.BonusTierId == bonusTierId);
+        }
+
+        public async Task<bool> CreateBonusTierAsync(BonusTier bonusTier)
+        {
+            try
+            {
+                // Validate rank range
+                if (bonusTier.RankStart > bonusTier.RankEnd)
+                {
+                    _logger.LogWarning("RankStart cannot be greater than RankEnd");
+                    return false;
+                }
+
+                if (bonusTier.RankStart < 1)
+                {
+                    _logger.LogWarning("Rank must be at least 1");
+                    return false;
+                }
+
+                bonusTier.CreatedAt = DateTime.UtcNow;
+                _context.BonusTiers.Add(bonusTier);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating bonus tier");
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateBonusTierAsync(BonusTier bonusTier)
+        {
+            try
+            {
+                var existing = await _context.BonusTiers
+                    .FirstOrDefaultAsync(b => b.BonusTierId == bonusTier.BonusTierId);
+
+                if (existing == null)
+                    return false;
+
+                // Validate rank range
+                if (bonusTier.RankStart > bonusTier.RankEnd)
+                {
+                    _logger.LogWarning("RankStart cannot be greater than RankEnd");
+                    return false;
+                }
+
+                existing.RankStart = bonusTier.RankStart;
+                existing.RankEnd = bonusTier.RankEnd;
+                existing.BonusAmount = bonusTier.BonusAmount;
+                existing.Description = bonusTier.Description;
+                existing.IsActive = bonusTier.IsActive;
+                existing.DisplayOrder = bonusTier.DisplayOrder;
+                existing.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating bonus tier");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteBonusTierAsync(int bonusTierId)
+        {
+            try
+            {
+                var bonusTier = await _context.BonusTiers
+                    .FirstOrDefaultAsync(b => b.BonusTierId == bonusTierId);
+
+                if (bonusTier == null)
+                    return false;
+
+                _context.BonusTiers.Remove(bonusTier);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting bonus tier");
+                return false;
+            }
+        }
+
+        public async Task<decimal> CalculateBonusForRank(int rank)
+        {
+            var bonusTiers = await GetActiveBonusTiersAsync();
+
+            foreach (var tier in bonusTiers)
+            {
+                if (rank >= tier.RankStart && rank <= tier.RankEnd)
+                {
+                    return tier.BonusAmount;
+                }
+            }
+
+            return 0m;
+        }
+
+        public async Task<Dictionary<int, decimal>> GetBonusDistributionAsync()
+        {
+            var distribution = new Dictionary<int, decimal>();
+            var bonusTiers = await GetActiveBonusTiersAsync();
+
+            foreach (var tier in bonusTiers)
+            {
+                for (int rank = tier.RankStart; rank <= tier.RankEnd; rank++)
+                {
+                    if (!distribution.ContainsKey(rank))
+                    {
+                        distribution[rank] = tier.BonusAmount;
+                    }
+                }
+            }
+
+            return distribution;
+        }
+
+        // Convenience Methods
+        public async Task<int> GetMinimumRatingsThresholdAsync()
+        {
+            return await GetSettingValueAsync<int>("MinimumRatingsThreshold");
+        }
+
+        public async Task<bool> UpdateMinimumRatingsThresholdAsync(int threshold)
+        {
+            return await UpdateSettingAsync("MinimumRatingsThreshold", threshold.ToString());
+        }
+    }
+}
+```
+
+---
+
+## 5. Key Controllers
+
+### 5.1 Admin Settings Controller
+
+Create `Controllers/AdminController.cs`:
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using RateMyTeacher.Services;
+using RateMyTeacher.Models;
+
+namespace RateMyTeacher.Controllers
+{
+    public class AdminController : Controller
+    {
+        private readonly ISettingsService _settingsService;
+        private readonly IRatingService _ratingService;
+
+        public AdminController(ISettingsService settingsService, IRatingService ratingService)
+        {
+            _settingsService = settingsService;
+            _ratingService = ratingService;
+        }
+
+        // GET: /Admin/Settings
+        public async Task<IActionResult> Settings()
+        {
+            var settings = await _settingsService.GetAllSettingsAsync();
+            var bonusTiers = await _settingsService.GetActiveBonusTiersAsync();
+
+            ViewBag.BonusTiers = bonusTiers;
+            return View(settings);
+        }
+
+        // POST: /Admin/UpdateSetting
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateSetting(string key, string value)
+        {
+            var result = await _settingsService.UpdateSettingAsync(key, value);
+
+            if (result)
+            {
+                TempData["Success"] = "Setting updated successfully";
+            }
+            else
+            {
+                TempData["Error"] = "Failed to update setting";
+            }
+
+            return RedirectToAction("Settings");
+        }
+
+        // GET: /Admin/BonusTiers
+        public async Task<IActionResult> BonusTiers()
+        {
+            var bonusTiers = await _settingsService.GetActiveBonusTiersAsync();
+            var distribution = await _settingsService.GetBonusDistributionAsync();
+
+            ViewBag.Distribution = distribution;
+            return View(bonusTiers);
+        }
+
+        // GET: /Admin/CreateBonusTier
+        public IActionResult CreateBonusTier()
+        {
+            return View();
+        }
+
+        // POST: /Admin/CreateBonusTier
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateBonusTier(BonusTier bonusTier)
+        {
+            if (!ModelState.IsValid)
+                return View(bonusTier);
+
+            var result = await _settingsService.CreateBonusTierAsync(bonusTier);
+
+            if (result)
+            {
+                TempData["Success"] = "Bonus tier created successfully";
+                return RedirectToAction("BonusTiers");
+            }
+
+            ModelState.AddModelError("", "Failed to create bonus tier");
+            return View(bonusTier);
+        }
+
+        // GET: /Admin/EditBonusTier/5
+        public async Task<IActionResult> EditBonusTier(int id)
+        {
+            var bonusTier = await _settingsService.GetBonusTierByIdAsync(id);
+
+            if (bonusTier == null)
+                return NotFound();
+
+            return View(bonusTier);
+        }
+
+        // POST: /Admin/EditBonusTier/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditBonusTier(BonusTier bonusTier)
+        {
+            if (!ModelState.IsValid)
+                return View(bonusTier);
+
+            var result = await _settingsService.UpdateBonusTierAsync(bonusTier);
+
+            if (result)
+            {
+                TempData["Success"] = "Bonus tier updated successfully";
+                return RedirectToAction("BonusTiers");
+            }
+
+            ModelState.AddModelError("", "Failed to update bonus tier");
+            return View(bonusTier);
+        }
+
+        // POST: /Admin/DeleteBonusTier/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteBonusTier(int id)
+        {
+            var result = await _settingsService.DeleteBonusTierAsync(id);
+
+            if (result)
+            {
+                TempData["Success"] = "Bonus tier deleted successfully";
+            }
+            else
+            {
+                TempData["Error"] = "Failed to delete bonus tier";
+            }
+
+            return RedirectToAction("BonusTiers");
+        }
+
+        // GET: /Admin/Leaderboard
+        public async Task<IActionResult> Leaderboard(string semester)
+        {
+            var minRatings = await _settingsService.GetMinimumRatingsThresholdAsync();
+            var rankings = await _ratingService.GetTeacherRankingsAsync(semester, minRatings);
+            var bonusDistribution = await _settingsService.GetBonusDistributionAsync();
+
+            ViewBag.Semester = semester;
+            ViewBag.MinimumRatings = minRatings;
+            ViewBag.BonusDistribution = bonusDistribution;
+
+            return View(rankings);
+        }
+    }
+}
+```
+
+### 5.2 Teachers Controller
 
 Create `Controllers/TeachersController.cs`:
 
@@ -735,7 +1849,7 @@ namespace RateMyTeacher.Controllers
 }
 ```
 
-### 4.2 Lessons Controller
+### 5.3 Lessons Controller
 
 Create `Controllers/LessonsController.cs`:
 
@@ -822,9 +1936,9 @@ namespace RateMyTeacher.Controllers
 
 ---
 
-## 5. Frontend Implementation
+## 6. Frontend Implementation
 
-### 5.1 Neuromorphic CSS Setup
+### 6.1 Neuromorphic CSS Setup
 
 Create `wwwroot/css/neuromorphic.css`:
 
@@ -956,7 +2070,7 @@ body {
 }
 ```
 
-### 5.2 Theme Toggle JavaScript
+### 6.2 Theme Toggle JavaScript
 
 Create `wwwroot/js/theme.js`:
 
@@ -996,7 +2110,7 @@ if (themeToggle) {
 }
 ```
 
-### 5.3 AI Chat Interface
+### 6.3 AI Chat Interface
 
 Create `wwwroot/js/ai-chat.js`:
 
@@ -1077,9 +2191,9 @@ function removeMessage(messageId) {
 
 ---
 
-## 6. Localization Setup
+## 7. Localization Setup
 
-### 6.1 Resource Files Structure
+### 7.1 Resource Files Structure
 
 Create resource files:
 
@@ -1094,7 +2208,7 @@ Resources/
     └── Home.en.resx
 ```
 
-### 6.2 Update Program.cs for Localization
+### 7.2 Update Program.cs for Localization
 
 ```csharp
 // Add localization services
@@ -1114,9 +2228,9 @@ app.UseRequestLocalization();
 
 ---
 
-## 7. Development Workflow
+## 8. Development Workflow
 
-### 7.1 Initial Setup Commands
+### 8.1 Initial Setup Commands
 
 ```powershell
 # Clone/create project
@@ -1139,7 +2253,7 @@ dotnet ef database update
 dotnet run
 ```
 
-### 7.2 Database Migration Commands
+### 8.2 Database Migration Commands
 
 ```powershell
 # Create initial migration
@@ -1160,9 +2274,9 @@ dotnet ef migrations remove
 
 ---
 
-## 8. Testing Strategy
+## 9. Testing Strategy
 
-### 8.1 Unit Tests Setup
+### 9.1 Unit Tests Setup
 
 ```powershell
 # Create test project
@@ -1178,7 +2292,7 @@ dotnet add package Microsoft.EntityFrameworkCore.InMemory
 dotnet add package FluentAssertions
 ```
 
-### 8.2 Example Test
+### 9.2 Example Test
 
 ```csharp
 using Xunit;
@@ -1208,9 +2322,9 @@ public class GeminiServiceTests
 
 ---
 
-## 9. Deployment Configuration
+## 10. Deployment Configuration
 
-### 9.1 Publish for Production
+### 10.1 Publish for Production
 
 ```powershell
 # Publish as self-contained executable
@@ -1219,7 +2333,7 @@ dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=
 # Output will be in: bin/Release/net9.0/win-x64/publish/
 ```
 
-### 9.2 Docker Support (Optional)
+### 10.2 Docker Support (Optional)
 
 Create `Dockerfile`:
 
@@ -1248,9 +2362,9 @@ ENTRYPOINT ["dotnet", "RateMyTeacher.dll"]
 
 ---
 
-## 10. Performance Optimization
+## 11. Performance Optimization
 
-### 10.1 Caching Strategy
+### 11.1 Caching Strategy
 
 ```csharp
 // Add memory caching in Program.cs
@@ -1275,7 +2389,7 @@ public class TeacherService : ITeacherService
 }
 ```
 
-### 10.2 Query Optimization
+### 11.2 Query Optimization
 
 ```csharp
 // Use AsNoTracking for read-only queries
@@ -1292,7 +2406,7 @@ var teacherNames = await _dbContext.Teachers
 
 ---
 
-## 11. Security Checklist
+## 12. Security Checklist
 
 - [ ] Add API key validation for Gemini service
 - [ ] Implement user authentication (ASP.NET Identity)
@@ -1307,7 +2421,7 @@ var teacherNames = await _dbContext.Teachers
 
 ---
 
-## 12. Phase 1 Implementation Checklist (MVP)
+## 13. Phase 1 Implementation Checklist (MVP)
 
 ### Week 1-2: Foundation
 
@@ -1353,9 +2467,70 @@ var teacherNames = await _dbContext.Teachers
 - [ ] Create deployment package
 - [ ] Write user documentation
 
+### Phase 2: Enhanced Features (Teacher Attendance & Settings)
+
+- [ ] Implement teacher absence tracking system
+- [ ] Create admin approval workflow for teacher absences
+- [ ] Add substitute teacher assignment
+- [ ] Update student attendance to per-day tracking
+- [ ] Add mid-day status updates (sick, out-of-class, etc.)
+- [ ] Implement bonus tier management UI
+- [ ] Create system settings admin panel
+- [ ] Add attendance history views for teachers and students
+
+### Phase 3: Student Dashboard & Learning Management System
+
+#### Student Dashboard Core
+
+- [ ] Create student dashboard layout and navigation
+- [ ] Implement homework/assignment viewing with due dates
+- [ ] Build file upload system for assignment submissions
+- [ ] Display grades with personal stats and class averages
+- [ ] Create calendar view with all due dates and events
+- [ ] Implement reading assignment tracking system
+- [ ] Add teacher notes display for next class
+- [ ] Build completion status tracking for readings
+
+#### AI Study Companion
+
+- [ ] Integrate AI companion interface in student dashboard
+- [ ] Implement "Explain Concept" mode (detailed explanations)
+- [ ] Implement "Guide to Solution" mode (step-by-step guidance, no direct answers)
+- [ ] Implement "Show Answer Only" mode (answer without explanation)
+- [ ] Add comprehension check system for required readings
+- [ ] Build AI study plan generator based on due dates
+- [ ] Implement context-aware AI responses (understands current coursework)
+- [ ] Add AI usage limits and safety guardrails
+
+#### Gamification & Collaboration
+
+- [ ] Design and implement student note sharing system
+- [ ] Add points/badges for shared notes (views, likes)
+- [ ] Create leaderboard for student contributions
+- [ ] Implement note search and filtering by subject/tags
+- [ ] Add note quality rating system
+
+#### Extra Classes & Meetings
+
+- [ ] Build extra class scheduling interface for teachers
+- [ ] Integrate with external meeting platforms (Google Meet, Zoom, Teams)
+- [ ] Create student enrollment system for extra classes
+- [ ] Add calendar integration for scheduled meetings
+- [ ] Implement attendance tracking for extra classes
+- [ ] Add email/notification system for meeting reminders
+
+#### Analytics & Insights
+
+- [ ] Create personalized study recommendations
+- [ ] Build "What's Next" and "Urgent" priority system
+- [ ] Add module/reading recommendations before class
+- [ ] Implement performance tracking over time
+- [ ] Create class average comparisons
+- [ ] Add subject-wise performance breakdown
+
 ---
 
-## 13. API Costs & Limits (Gemini 2.5 Flash)
+## 14. API Costs & Limits (Gemini 2.5 Flash)
 
 ### Free Tier Limits
 
@@ -1382,7 +2557,7 @@ var teacherNames = await _dbContext.Teachers
 
 ---
 
-## 14. File Structure Summary
+## 15. File Structure Summary
 
 ```
 RateMyTeacher/
@@ -1440,7 +2615,7 @@ RateMyTeacher/
 
 ---
 
-## 15. Getting Started Guide
+## 16. Getting Started Guide
 
 ### Prerequisites
 
@@ -1469,7 +2644,7 @@ RateMyTeacher/
 
 ---
 
-## 16. Troubleshooting
+## 17. Troubleshooting
 
 ### Common Issues
 
@@ -1500,7 +2675,7 @@ RateMyTeacher/
 After completing Phase 1 MVP, proceed with:
 
 1. **Phase 2**: Advanced features (voice-to-text, advanced analytics)
-2. **Phase 3**: Mobile app (optional)
+2. **Phase 3**: Student-Side Dashboard.
 3. **Phase 4**: Multi-school support
 4. **Production**: Deploy to Azure/AWS
 
