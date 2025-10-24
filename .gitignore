@@ -99,7 +99,4 @@ coverage/
 *.svclog
 *.scc
 RateMyTeacher.sln
-obj/Debug/net9.0/RateMyTeacher.AssemblyInfo.cs
-obj/Debug/net9.0/RateMyTeacher.AssemblyInfoInputs.cache
-obj/Debug/net9.0/RateMyTeacher.assets.cache
-obj/Debug/net9.0/RateMyTeacher.GeneratedMSBuildEditorConfig.editorconfig
+
