@@ -66,27 +66,21 @@ The application will be available at:
 
 - HTTPS: `https://localhost:5001`
 - HTTP: `http://localhost:5000`
-
 ## 🔧 Configuration
 
 ### Environment Variables
 
-See `.env.example` for all available configuration options:
-
 | Variable                  | Description                 | Default                 |
 | ------------------------- | --------------------------- | ----------------------- |
 | `GEMINI_API_KEY`          | Google Gemini API key       | _Required_              |
-| `GEMINI_MODEL`            | Gemini model version        | `gemini-2.5-flash`      |
 | `DATABASE_PATH`           | SQLite database location    | `Data/ratemyteacher.db` |
 | `FIRST_PLACE_BONUS`       | Bonus for 1st place teacher | `10.00`                 |
 | `SECOND_PLACE_BONUS`      | Bonus for 2nd place teacher | `5.00`                  |
 | `MINIMUM_VOTES_THRESHOLD` | Min votes for leaderboard   | `20`                    |
-| `AI_MAX_TOKENS`           | Max AI response tokens      | `2048`                  |
 | `AI_TEMPERATURE`          | AI creativity (0.0-1.0)     | `0.7`                   |
 | `AI_TIMEOUT_SECONDS`      | AI request timeout          | `30`                    |
 
 ### Gemini API Limits (Free Tier)
-
 - **Daily Requests**: 1,500 requests/day
 - **Rate Limit**: 15 requests/minute
 - **Context Window**: 1 million tokens
@@ -170,7 +164,7 @@ RateMyTeacher/
 │   └── main/
 │       ├── plan.md      # Implementation plan
 │       ├── spec.md      # User stories
-│       └── tasks.md     # Task breakdown (47 tasks)
+│       └── tasks.md     # Task breakdown (65 tasks)
 ├── .env.example         # Environment template
 ├── PRINCIPLES.md        # Design constitution
 ├── SPECIFICATION.md     # Full feature spec
@@ -179,38 +173,45 @@ RateMyTeacher/
 
 ## 📝 Development Workflow
 
-This project follows a task-driven development approach. See [`specs/main/tasks.md`](./specs/main/tasks.md) for the complete task breakdown (47 tasks across 7 phases).
+This project follows a task-driven development approach. See [`specs/main/tasks.md`](./specs/main/tasks.md) for the complete task breakdown (65 tasks across 8 phases).
 
 ### Task Phases
 
-1. **Phase 1: Setup** (T001-T006) ✅
+1. **Phase 1: Setup** (T001–T005)
+   - Package references
+   - Environment variable templates
+   - Repository documentation and ignore rules
 
-   - Project initialization
-   - NuGet packages
-   - Environment configuration
+2. **Phase 2: Foundational** (T006–T013)
+   - EF Core context and design-time factory
+   - Core user/teacher/student domain models
+   - Cookie authentication scaffolding and layout updates
 
-2. **Phase 2: Foundational** (T007-T012)
+3. **Phase 3: US1 – Teacher Ratings** (T014–T025)
+   - Rating entity and services
+   - Teacher directory MVC workflow
+   - Sample data seeding for demos
 
-   - Database models
-   - Authentication
-   - Base layout
+4. **Phase 4: US2 – Leaderboard** (T026–T032)
+   - Ranking and bonus logic
+   - Admin leaderboard UI
+   - EF Core migrations for payouts
 
-3. **Phase 3: US1 - Teacher Ratings** (T013-T020)
+5. **Phase 5: US3 – AI Lesson Summaries** (T033–T042)
+   - Gemini abstraction layer
+   - Lesson models, controller endpoints, and client script
 
-   - Teacher CRUD
-   - Rating system
-   - Review moderation
+6. **Phase 6: US4 – Schedule & Attendance** (T043–T051)
+   - Schedule/attendance models and services
+   - QR and quick-mark attendance endpoints with dashboard UI
 
-4. **Phase 4: US2 - Leaderboard** (T021-T025)
+7. **Phase 7: US5 – Feedback Sentiment** (T052–T059)
+   - Feedback entities and sentiment analysis service
+   - Admin insights dashboard with visualizations
 
-   - Ranking algorithm
-   - Bonus calculation
-   - Charts
-
-5. **Phase 5-7: Advanced Features** (T026-T047)
-   - AI integration
-   - Analytics
-   - Smart scheduling
+8. **Final Phase: Polish & Cross-Cutting** (T060–T065)
+   - Localization resources and neuromorphic design assets
+   - Theme toggle script, test project, and deployment guidance
 
 ## 🧪 Testing
 

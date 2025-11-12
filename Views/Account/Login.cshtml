@@ -1,0 +1,26 @@
+@model RateMyTeacher.Models.Account.LoginViewModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<h1 class="mb-4">Sign in</h1>
+
+<form asp-action="Login" method="post" class="needs-validation" novalidate>
+    @Html.AntiForgeryToken()
+    <div class="mb-3">
+        <label asp-for="UsernameOrEmail" class="form-label"></label>
+        <input asp-for="UsernameOrEmail" class="form-control" autocomplete="username" />
+        <span asp-validation-for="UsernameOrEmail" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" class="form-control" autocomplete="current-password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+    <button type="submit" class="btn btn-primary">Sign in</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
