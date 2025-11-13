@@ -9,11 +9,11 @@ Tests are not explicitly requested; focus on implementation tasks that enable in
 
 **Purpose**: Establish project scaffolding, configuration, and developer ergonomics.
 
-- [x] T001 Add required EF Core, SQLite, DotNetEnv, and Mscc.GenerativeAI package references in `RateMyTeacher/RateMyTeacher.csproj`.
-- [x] T002 Create `.env.example` with Gemini, database, and bonus configuration keys in `RateMyTeacher/.env.example`.
-- [x] T003 Update ignore rules for environment files and SQLite artifacts in `RateMyTeacher/.gitignore`.
-- [x] T004 Document project overview, environment setup, and spec references in `RateMyTeacher/README.md`.
-- [x] T005 Add placeholder documentation for data directory responsibilities in `RateMyTeacher/Data/README.md`.
+- [ ] T001 Add required EF Core, SQLite, DotNetEnv, and Mscc.GenerativeAI package references in `RateMyTeacher/RateMyTeacher.csproj`.
+- [ ] T002 Create `.env.example` with Gemini, database, and bonus configuration keys in `RateMyTeacher/.env.example`.
+- [ ] T003 Update ignore rules for environment files and SQLite artifacts in `RateMyTeacher/.gitignore`.
+- [ ] T004 Document project overview, environment setup, and spec references in `RateMyTeacher/README.md`.
+- [ ] T005 Add placeholder documentation for data directory responsibilities in `RateMyTeacher/Data/README.md`.
 
 ---
 
@@ -21,14 +21,14 @@ Tests are not explicitly requested; focus on implementation tasks that enable in
 
 **Purpose**: Provide core infrastructure all user stories depend on.
 
-- [x] T006 Create EF Core context with DbSets and configuration stubs in `RateMyTeacher/Data/ApplicationDbContext.cs`.
-- [x] T007 Configure dependency injection, DotNetEnv loading, and SQLite connection in `RateMyTeacher/Program.cs`.
-- [x] T008 [P] Implement base user aggregate with roles and metadata in `RateMyTeacher/Models/User.cs`.
-- [x] T009 [P] Implement teacher profile model with navigation properties in `RateMyTeacher/Models/Teacher.cs`.
-- [x] T010 [P] Implement student model including enrollment metadata in `RateMyTeacher/Models/Student.cs`.
-- [x] T011 Add design-time context factory to support migrations in `RateMyTeacher/Data/DesignTimeDbContextFactory.cs`.
-- [x] T012 Scaffold cookie-based authentication endpoints in `RateMyTeacher/Controllers/AccountController.cs` and associated views under `RateMyTeacher/Views/Account/`.
-- [x] T013 Refresh shared layout with navigation placeholders and theme toggle slot in `RateMyTeacher/Views/Shared/_Layout.cshtml`.
+- [ ] T006 Create EF Core context with DbSets and configuration stubs in `RateMyTeacher/Data/ApplicationDbContext.cs`.
+- [ ] T007 Configure dependency injection, DotNetEnv loading, and SQLite connection in `RateMyTeacher/Program.cs`.
+- [ ] T008 [P] Implement base user aggregate with roles and metadata in `RateMyTeacher/Models/User.cs`.
+- [ ] T009 [P] Implement teacher profile model with navigation properties in `RateMyTeacher/Models/Teacher.cs`.
+- [ ] T010 [P] Implement student model including enrollment metadata in `RateMyTeacher/Models/Student.cs`.
+- [ ] T011 Add design-time context factory to support migrations in `RateMyTeacher/Data/DesignTimeDbContextFactory.cs`.
+- [ ] T012 Scaffold cookie-based authentication endpoints in `RateMyTeacher/Controllers/AccountController.cs` and associated views under `RateMyTeacher/Views/Account/`.
+- [ ] T013 Refresh shared layout with navigation placeholders and theme toggle slot in `RateMyTeacher/Views/Shared/_Layout.cshtml`.
 
 ---
 
@@ -128,7 +128,7 @@ Tests are not explicitly requested; focus on implementation tasks that enable in
 **Purpose**: Apply consistency, performance, and documentation improvements across stories.
 
 - [ ] T060 Add localization resources and configure supported cultures in `RateMyTeacher/Resources/` and `RateMyTeacher/Program.cs`.
-- [ ] T061 Introduce neuromorphic styling in `RateMyTeacher/wwwro ot/css/neuromorphic.css` and link in `_Layout.cshtml`.
+- [ ] T061 Introduce neuromorphic styling in `RateMyTeacher/wwwroot/css/neuromorphic.css` and link in `_Layout.cshtml`.
 - [ ] T062 Implement theme toggle behavior in `RateMyTeacher/wwwroot/js/theme.js` and wire button in `_Layout.cshtml`.
 - [ ] T063 Create `RateMyTeacher.Tests/` project with foundational service tests and add solution reference.
 - [ ] T064 Expand deployment and migration guidance in `RateMyTeacher/README.md`.
