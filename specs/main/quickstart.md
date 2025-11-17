@@ -9,7 +9,7 @@
 
 Before you begin, ensure you have the following installed:
 
-- **.NET 9 SDK** ([Download](https://dotnet.microsoft.com/download/dotnet/9.0))
+- **.NET 10 SDK** ([Download](https://dotnet.microsoft.com/download/dotnet/10.0))
   - Verify: `dotnet --version` (should show 9.0.x)
 - **Git** (for version control)
 - **VS Code** or **Visual Studio** (recommended IDEs)
@@ -40,9 +40,9 @@ dotnet restore
 
 **Expected packages:**
 
-- Microsoft.EntityFrameworkCore (9.0)
-- Microsoft.EntityFrameworkCore.Sqlite (9.0)
-- Microsoft.EntityFrameworkCore.Tools (9.0)
+- Microsoft.EntityFrameworkCore (10.0)
+- Microsoft.EntityFrameworkCore.Sqlite (10.0)
+- Microsoft.EntityFrameworkCore.Tools (10.0)
 - Google.GenerativeAI (latest)
 - DotNetEnv (latest)
 
@@ -127,12 +127,12 @@ dotnet watch run
 
 **Application URLs:**
 
-- **HTTPS**: https://localhost:5001 (recommended)
-- **HTTP**: http://localhost:5000
+- **HTTPS**: <https://localhost:5001> (recommended)
+- **HTTP**: <http://localhost:5000>
 
 **Console output should show:**
 
-```
+```text
 info: Microsoft.Hosting.Lifetime[14]
       Now listening on: https://localhost:5001
 info: Microsoft.Hosting.Lifetime[14]
@@ -147,7 +147,7 @@ info: Microsoft.Hosting.Lifetime[0]
 
 Open your browser and navigate to:
 
-👉 **https://localhost:5001**
+👉 **[https://localhost:5001](https://localhost:5001)**
 
 ### First Login (Admin)
 
@@ -414,4 +414,4 @@ See `specs/main/plan.md` for detailed production considerations.
 
 ---
 
-**Happy Coding! 🎓**
+Happy Coding! 🎓

@@ -10,15 +10,15 @@ RateMyTeacher is a comprehensive educational platform for teacher evaluation, at
 - **Phase 2 (P2)**: Discord-style multi-role permission system, attendance tracking, AI companion controls
 - **Phase 3 (P3)**: Student LMS features (assignments, notes, gamification, reading tracking)
 
-**Technical Approach**: ASP.NET Core 9 MVC with SQLite embedded database, Entity Framework Core for ORM, Google Gemini 2.5 Flash for AI features, and Razor Views with vanilla JavaScript for the UI.
+**Technical Approach**: ASP.NET Core 10 MVC with SQLite embedded database, Entity Framework Core for ORM, Google Gemini 2.5 Flash for AI features, and Razor Views with vanilla JavaScript for the UI.
 
 ## Technical Context
 
-**Language/Version**: C# / .NET 9  
-**Framework**: ASP.NET Core 9 MVC  
+**Language/Version**: C# / .NET 10  
+**Framework**: ASP.NET Core 10 MVC  
 **Primary Dependencies**:
 
-- Entity Framework Core 9.0 (ORM & Migrations)
+- Entity Framework Core 10.0 (ORM & Migrations)
 - Google.GenerativeAI (Gemini 2.5 Flash integration)
 - DotNetEnv (environment variable management)
 - Chart.js (client-side data visualization)
@@ -377,7 +377,7 @@ For this MVC application, most interactions are server-rendered, but we may expo
 
 **Contents**:
 
-1. Prerequisites (.NET 9 SDK, SQLite)
+1. Prerequisites (.NET 10 SDK, SQLite)
 2. Clone repository
 3. Create `.env` file with Gemini API key
 4. Run migrations: `dotnet ef database update`
@@ -391,7 +391,7 @@ For this MVC application, most interactions are server-rendered, but we may expo
 After completing Phase 1 design:
 
 - Run `.specify/scripts/powershell/update-agent-context.ps1 -AgentType copilot` (or equivalent)
-- Add: ASP.NET Core 9 MVC, Entity Framework Core 9, Google.GenerativeAI
+- Add: ASP.NET Core 10 MVC, Entity Framework Core 10, Google.GenerativeAI
 - Preserve manual additions between markers
 
 ## Phase 2: Implementation Planning

@@ -4,7 +4,7 @@
 
 ### Technology Stack Overview
 
-**Framework**: ASP.NET Core 9.0 MVC  
+**Framework**: ASP.NET Core 10.0 MVC (LTS)  
 **Database**: SQLite (Embedded, No Installation Required)  
 **AI Model**: Google Gemini 2.5 Flash  
 **Target**: Demo/Prototype Application  
@@ -17,16 +17,16 @@
 ### 1.1 Create New ASP.NET Core MVC Project
 
 ```powershell
-# Create new ASP.NET Core 9 MVC project
-dotnet new mvc -n RateMyTeacher -f net9.0
+# Create new ASP.NET Core 10 MVC project
+dotnet new mvc -n RateMyTeacher -f net10.0
 
 # Navigate to project directory
 cd RateMyTeacher
 
 # Add required NuGet packages
-dotnet add package Microsoft.EntityFrameworkCore.Sqlite --version 9.0.0
-dotnet add package Microsoft.EntityFrameworkCore.Tools --version 9.0.0
-dotnet add package Microsoft.EntityFrameworkCore.Design --version 9.0.0
+dotnet add package Microsoft.EntityFrameworkCore.Sqlite --version 10.0.0
+dotnet add package Microsoft.EntityFrameworkCore.Tools --version 10.0.0
+dotnet add package Microsoft.EntityFrameworkCore.Design --version 10.0.0
 dotnet add package Google.Generative.AI --version 1.0.0
 dotnet add package DotNetEnv --version 3.1.1
 ```
@@ -2330,7 +2330,7 @@ public class GeminiServiceTests
 # Publish as self-contained executable
 dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
 
-# Output will be in: bin/Release/net9.0/win-x64/publish/
+# Output will be in: bin/Release/net10.0/win-x64/publish/
 ```
 
 ### 10.2 Docker Support (Optional)
@@ -2425,7 +2425,7 @@ var teacherNames = await _dbContext.Teachers
 
 ### Week 1-2: Foundation
 
-- [ ] Create ASP.NET Core 9 MVC project
+- [ ] Create ASP.NET Core 10 MVC project
 - [ ] Configure SQLite database
 - [ ] Set up Entity Framework Core
 - [ ] Create core models (User, Teacher, Student, Rating)
@@ -2619,7 +2619,7 @@ RateMyTeacher/
 
 ### Prerequisites
 
-1. .NET 9 SDK installed
+1. .NET 10 SDK installed
 2. Visual Studio Code or Visual Studio 2022
 3. Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey)
 
@@ -2683,4 +2683,4 @@ After completing Phase 1 MVP, proceed with:
 
 _Document Version: 1.0_  
 _Last Updated: October 22, 2025_  
-_Technology: ASP.NET Core 9 MVC + SQLite + Gemini 2.5 Flash_
+_Technology: ASP.NET Core 10 MVC + SQLite + Gemini 2.5 Flash_

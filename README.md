@@ -1,6 +1,6 @@
 # RateMyTeacher - Teacher Rating & Leaderboard System
 
-A modern ASP.NET Core 9 MVC application for student-teacher engagement with AI-powered features, ratings, and leaderboards.
+A modern ASP.NET Core 10 MVC application for student-teacher engagement with AI-powered features, ratings, and leaderboards.
 
 ## 🎯 Overview
 
@@ -8,7 +8,7 @@ RateMyTeacher is a demo application that enables students to rate teachers, view
 
 ## 🏗️ Architecture
 
-- **Framework**: ASP.NET Core 9 MVC
+- **Framework**: ASP.NET Core 10 MVC (LTS)
 - **Database**: SQLite (embedded, no external installation)
 - **AI Model**: Google Gemini 2.5 Flash
 - **Frontend**: Razor Views, vanilla JavaScript, Chart.js
@@ -17,7 +17,7 @@ RateMyTeacher is a demo application that enables students to rate teachers, view
 
 ## 📦 Prerequisites
 
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Google Gemini API Key](https://makersuite.google.com/app/apikey) (free tier available)
 - Git (for version control)
 
@@ -66,40 +66,28 @@ The application will be available at:
 
 - HTTPS: `https://localhost:5001`
 - HTTP: `http://localhost:5000`
-1. **Phase 1: Setup** (T001–T005)
+
 ## 🔧 Configuration
 
 ### Environment Variables
 
-2. **Phase 2: Foundational** (T006–T013)
-
 | Variable                  | Description                 | Default                 |
 | ------------------------- | --------------------------- | ----------------------- |
 | `GEMINI_API_KEY`          | Google Gemini API key       | _Required_              |
-3. **Phase 3: US1 – Teacher Ratings** (T014–T025)
 | `DATABASE_PATH`           | SQLite database location    | `Data/ratemyteacher.db` |
 | `FIRST_PLACE_BONUS`       | Bonus for 1st place teacher | `10.00`                 |
 | `SECOND_PLACE_BONUS`      | Bonus for 2nd place teacher | `5.00`                  |
 | `MINIMUM_VOTES_THRESHOLD` | Min votes for leaderboard   | `20`                    |
-4. **Phase 4: US2 – Leaderboard** (T026–T032)
 | `AI_TEMPERATURE`          | AI creativity (0.0-1.0)     | `0.7`                   |
 | `AI_TIMEOUT_SECONDS`      | AI request timeout          | `30`                    |
+| `BONUS_TIE_STRATEGY`      | Tie handling mode           | `split`                 |
+| `AI_MAX_SUMMARY_WORDS`    | Target summary size         | `300`                   |
 
 ### Gemini API Limits (Free Tier)
-5. **Phase 5: US3 – AI Lesson Summaries** (T033–T042)
+
 - **Daily Requests**: 1,500 requests/day
 - **Rate Limit**: 15 requests/minute
 - **Context Window**: 1 million tokens
-6. **Phase 6: US4 – Schedule & Attendance** (T043–T051)
-   - Schedule/attendance models & services
-   - QR code attendance endpoint & dashboard UI
-7. **Phase 7: US5 – Feedback Sentiment** (T052–T059)
-   - Feedback entities & sentiment service
-   - Admin sentiment dashboard & visualizations
-8. **Final Phase: Polish & Cross-Cutting** (T060–T065)
-   - Localization resources
-   - Neuromorphic design assets & theme toggle scripts
-   - Test project, deployment notes, schema synchronization
 
 ## 📋 Features
 
@@ -159,7 +147,7 @@ This application follows strict design principles defined in [`PRINCIPLES.md`](.
 
 ## 📁 Project Structure
 
-```
+```text
 RateMyTeacher/
 ├── Controllers/          # MVC Controllers
 ├── Models/              # Data models & ViewModels
@@ -289,4 +277,4 @@ This is a demo application for educational purposes.
 
 ---
 
-**Built with ❤️ using ASP.NET Core 9 + Google Gemini 2.5 Flash**
+Built with ❤️ using ASP.NET Core 10 + Google Gemini 2.5 Flash.

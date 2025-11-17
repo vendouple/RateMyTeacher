@@ -9,11 +9,11 @@ Tests are not explicitly requested; focus on implementation tasks that enable in
 
 **Purpose**: Establish project scaffolding, configuration, and developer ergonomics.
 
-- [ ] T001 Add required EF Core, SQLite, DotNetEnv, and Mscc.GenerativeAI package references in `RateMyTeacher/RateMyTeacher.csproj`.
-- [ ] T002 Create `.env.example` with Gemini, database, and bonus configuration keys in `RateMyTeacher/.env.example`.
-- [ ] T003 Update ignore rules for environment files and SQLite artifacts in `RateMyTeacher/.gitignore`.
-- [ ] T004 Document project overview, environment setup, and spec references in `RateMyTeacher/README.md`.
-- [ ] T005 Add placeholder documentation for data directory responsibilities in `RateMyTeacher/Data/README.md`.
+- [X] T001 Add required EF Core, SQLite, DotNetEnv, and Mscc.GenerativeAI package references in `RateMyTeacher/RateMyTeacher.csproj`.
+- [X] T002 Create `.env.example` with Gemini, database, and bonus configuration keys in `RateMyTeacher/.env.example`.
+- [X] T003 Update ignore rules for environment files and SQLite artifacts in `RateMyTeacher/.gitignore`.
+- [X] T004 Document project overview, environment setup, and spec references in `RateMyTeacher/README.md`.
+- [X] T005 Add placeholder documentation for data directory responsibilities in `RateMyTeacher/Data/README.md`.
 
 ---
 

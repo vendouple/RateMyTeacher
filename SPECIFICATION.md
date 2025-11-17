@@ -830,7 +830,7 @@
 
 ### Backend Stack
 
-- **Framework**: ASP.NET Core 9.0
+- **Framework**: ASP.NET Core 10.0 (LTS)
 - **Language**: C# 12
 - **Architecture**: Clean Architecture (Controllers → Services → Repositories)
 - **ORM**: Entity Framework Core 9.0
@@ -1082,7 +1082,7 @@
 - Marketing: $20,000/year
 - Legal & compliance: $10,000/year
 
-**Total Estimated Budget: $569,400/year**
+Total Estimated Budget: $569,400/year.
 
 ---
 

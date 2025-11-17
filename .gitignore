@@ -53,10 +53,10 @@ _ReSharper*/
 !.env.example
 
 # Database files (SQLite)
-Data/
 *.db
 *.db-shm
 *.db-wal
+Data/**/*.db
 
 # Logs
 *.log
