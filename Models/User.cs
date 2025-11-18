@@ -50,6 +50,7 @@ public class User
     public DateTime? LastLoginAt { get; set; }
     public DateTime? DeletedAt { get; set; }
     public int? DeletedById { get; set; }
+    public bool MustChangePassword { get; set; }
 
     [ForeignKey(nameof(DeletedById))]
     public User? DeletedBy { get; set; }

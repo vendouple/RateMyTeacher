@@ -15,6 +15,17 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
+        if (!(User?.Identity?.IsAuthenticated ?? false))
+        {
+            return RedirectToAction("Login", "Account", new { returnUrl = Url.Action(nameof(Index), "Home") });
+        }
+
+        var dashboardResult = RedirectToPrimaryDashboard();
+        if (dashboardResult is not null)
+        {
+            return dashboardResult;
+        }
+
         return View();
     }
 
@@ -27,5 +38,25 @@ public class HomeController : Controller
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    private IActionResult? RedirectToPrimaryDashboard()
+    {
+        if (User.IsInRole("Admin"))
+        {
+            return RedirectToAction("Admin", "Dashboard");
+        }
+
+        if (User.IsInRole("Teacher"))
+        {
+            return RedirectToAction("Teacher", "Dashboard");
+        }
+
+        if (User.IsInRole("Student"))
+        {
+            return RedirectToAction("Student", "Dashboard");
+        }
+
+        return null;
     }
 }

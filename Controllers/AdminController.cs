@@ -79,6 +79,12 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Leaderboard), new { semesterId = leaderboard.Semester.Id });
     }
 
+    [HttpGet("/Admin/Settings/AiControls")]
+    public IActionResult AiControlsShortcut()
+    {
+        return RedirectToAction("AiControls", "Settings");
+    }
+
     private async Task<IReadOnlyList<SemesterOptionViewModel>> GetSemesterOptionsAsync(CancellationToken cancellationToken)
     {
         var semesters = await _dbContext.Semesters

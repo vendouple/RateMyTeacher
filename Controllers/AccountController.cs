@@ -1,12 +1,14 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RateMyTeacher.Data;
 using RateMyTeacher.Models;
 using RateMyTeacher.Models.Account;
+using RateMyTeacher.Security;
 
 namespace RateMyTeacher.Controllers;
 
@@ -15,6 +17,7 @@ public class AccountController : Controller
     private readonly ApplicationDbContext _dbContext;
     private readonly ILogger<AccountController> _logger;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private const string PasswordResetStatusKey = "PasswordResetStatus";
 
     public AccountController(
         ApplicationDbContext dbContext,
@@ -74,7 +77,8 @@ public class AccountController : Controller
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.FullName),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role)
+            new(ClaimTypes.Role, user.Role),
+            new(AuthConstants.MustChangePasswordClaim, user.MustChangePassword.ToString())
         };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -98,7 +102,13 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         }
 
-        return RedirectToAction("Index", "Home");
+        if (user.MustChangePassword)
+        {
+            TempData[PasswordResetStatusKey] = "Please set a new password before continuing.";
+            return RedirectToAction(nameof(ChangePassword));
+        }
+
+        return RedirectToRoleLanding(user.Role);
     }
 
     [HttpPost]
@@ -107,12 +117,70 @@ public class AccountController : Controller
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         _logger.LogInformation("User {UserName} signed out.", User.Identity?.Name);
-        return RedirectToAction("Index", "Home");
+        return RedirectToAction("Login", "Account");
     }
 
     [HttpGet]
     public IActionResult AccessDenied()
     {
         return View();
+    }
+
+    [Authorize]
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        ViewData["StatusMessage"] = TempData[PasswordResetStatusKey];
+        return View(new ChangePasswordViewModel());
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user is null)
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.CurrentPassword);
+        if (verification == PasswordVerificationResult.Failed)
+        {
+            ModelState.AddModelError(nameof(ChangePasswordViewModel.CurrentPassword), "Current password is incorrect.");
+            return View(model);
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(user, model.NewPassword);
+        user.MustChangePassword = false;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _dbContext.SaveChangesAsync();
+
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        TempData[PasswordResetStatusKey] = "Password updated. Sign in with your new credentials.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    private IActionResult RedirectToRoleLanding(string role)
+    {
+        return role switch
+        {
+            "Admin" => RedirectToAction("Admin", "Dashboard"),
+            "Teacher" => RedirectToAction("Teacher", "Dashboard"),
+            "Student" => RedirectToAction("Student", "Dashboard"),
+            _ => RedirectToAction("Index", "Home")
+        };
     }
 }

@@ -1,0 +1,90 @@
+@model StudentDashboardViewModel
+@{
+    ViewData["Title"] = "Student hub";
+}
+
+<section class="py-4">
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Hi, @Model.StudentName</h1>
+        <p class="text-muted mb-0">Follow your teachers, share ratings, and keep track of AI interactions.</p>
+    </div>
+
+    @if (!Model.HasProfile)
+    {
+        <div class="alert alert-info" role="alert">
+            We could not find a student profile attached to this account yet. Ask an admin to finish onboarding so your data is saved.
+        </div>
+    }
+
+    <div class="row row-cols-1 row-cols-md-3 g-3">
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted text-uppercase fw-semibold small mb-1">Ratings submitted</p>
+                    <h2 class="display-6 mb-0">@Model.RatingsSubmitted</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted text-uppercase fw-semibold small mb-1">Teachers available</p>
+                    <h2 class="display-6 mb-0">@Model.AvailableTeachers</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted text-uppercase fw-semibold small mb-1">AI sessions</p>
+                    <h2 class="display-6 mb-0">@Model.AiSessions</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">Suggested teachers</div>
+                <div class="card-body">
+                    @if (Model.Suggestions.Count == 0)
+                    {
+                        <p class="text-muted mb-0">Once more ratings are collected the top teachers for this semester will appear here.</p>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var suggestion in Model.Suggestions)
+                            {
+                                <a class="list-group-item list-group-item-action" asp-controller="Teachers" asp-action="Details" asp-route-id="@suggestion.TeacherId">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="fw-semibold">@suggestion.TeacherName</div>
+                                            <div class="text-muted small">@(suggestion.Department ?? "All departments")</div>
+                                        </div>
+                                        <span class="text-muted small">@suggestion.AverageRating.ToString("0.0") ★</span>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">Quick links</div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        @foreach (var link in Model.QuickLinks)
+                        {
+                            var href = Url.Action(link.Action, link.Controller, link.RouteValues);
+                            <a class="list-group-item list-group-item-action" href="@(href ?? "#")">@link.Label</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using RateMyTeacher.Data;
 using RateMyTeacher.Data.Seed;
 using RateMyTeacher.Models;
+using RateMyTeacher.Security;
 using RateMyTeacher.Services;
 using System.Globalization;
 
@@ -116,6 +117,25 @@ app.UseRequestLocalization(localizationOptions);
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
+app.Use(async (context, next) =>
+{
+    if (context.User?.Identity?.IsAuthenticated == true)
+    {
+        var claimValue = context.User.Claims.FirstOrDefault(c => c.Type == AuthConstants.MustChangePasswordClaim)?.Value;
+        if (claimValue is not null && bool.TryParse(claimValue, out var mustChange) && mustChange)
+        {
+            var path = context.Request.Path;
+            if (!path.StartsWithSegments("/Account/ChangePassword", StringComparison.OrdinalIgnoreCase) &&
+                !path.StartsWithSegments("/Account/Logout", StringComparison.OrdinalIgnoreCase))
+            {
+                context.Response.Redirect("/Account/ChangePassword");
+                return;
+            }
+        }
+    }
+
+    await next();
+});
 app.UseAuthorization();
 
 app.MapStaticAssets();

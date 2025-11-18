@@ -1,12 +1,52 @@
-﻿@using System.Globalization
+﻿@using System
+@using System.Globalization
 @using System.Security.Claims
+@using RateMyTeacher.Security
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
     var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
     var isAdmin = User?.IsInRole("Admin") ?? false;
     var isTeacher = User?.IsInRole("Teacher") ?? false;
+    var isStudent = User?.IsInRole("Student") ?? false;
     var displayName = User?.Identity?.Name ?? User?.FindFirstValue(ClaimTypes.Email) ?? "User";
+    var nameParts = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    var initials = string.Concat(nameParts.Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    var userInitials = string.IsNullOrWhiteSpace(initials) ? "ME" : initials;
+    if (userInitials.Length > 2)
+    {
+        userInitials = userInitials[..2];
+    }
+
+    var portalController = "Account";
+    var portalAction = "Login";
+    var portalLabel = isAuthenticated ? "Dashboard" : "Sign in";
+    var mustChangePasswordClaim = User?.FindFirst(AuthConstants.MustChangePasswordClaim)?.Value;
+    var mustChangePassword = mustChangePasswordClaim is not null && bool.TryParse(mustChangePasswordClaim, out var claimValue) && claimValue;
+    if (isAuthenticated)
+    {
+        portalController = "Dashboard";
+        if (isAdmin)
+        {
+            portalAction = "Admin";
+            portalLabel = "Admin panel";
+        }
+        else if (isTeacher)
+        {
+            portalAction = "Teacher";
+            portalLabel = "Teacher portal";
+        }
+        else if (isStudent)
+        {
+            portalAction = "Student";
+            portalLabel = "Student hub";
+        }
+        else
+        {
+            portalController = "Home";
+            portalAction = "Index";
+        }
+    }
 }
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.Name" data-theme="light">
@@ -26,16 +66,12 @@
     </script>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/neuromorphic.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/RateMyTeacher.styles.css" asp-append-version="true" />
     <script src="~/js/theme.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <button id="themeToggle" class="theme-toggle" type="button" aria-live="polite" aria-label="Toggle color theme">
-        <span aria-hidden="true" data-theme-icon>🌙</span>
-    </button>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -45,78 +81,98 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
                         <li class="nav-item">
-                            <a class="nav-link text-dark @(currentController == "Home" ? "active" : string.Empty)"
-                               asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark @(currentController == portalController && currentAction == portalAction ? "active" : string.Empty)"
+                               asp-controller="@portalController" asp-action="@portalAction">@portalLabel</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark @(currentController == "Teachers" ? "active" : string.Empty)"
-                               asp-area="" asp-controller="Teachers" asp-action="Index">Teachers</a>
+                               asp-controller="Teachers" asp-action="Index">Teachers</a>
                         </li>
-                        @if (isAuthenticated)
+                        @if (isAdmin)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark @(currentController == "Ratings" ? "active" : string.Empty)"
-                                   asp-area="" asp-controller="Ratings" asp-action="History">My Ratings</a>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark @(string.Equals(currentController, "Admin", StringComparison.OrdinalIgnoreCase) || string.Equals(currentController, "Settings", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                                   href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Admin">Admin dashboard</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Admin" asp-action="Leaderboard">Leaderboard &amp; bonuses</a></li>
+                                    <li><a class="dropdown-item" asp-controller="UserManagement" asp-action="Index">User management</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Settings" asp-action="AiControls">AI controls &amp; logs</a></li>
+                                </ul>
                             </li>
                         }
                         @if (isTeacher)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark @(currentController == "Schedule" && currentAction == "Today" ? "active" : string.Empty)"
-                                   asp-area="" asp-controller="Schedule" asp-action="Today">Schedule</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark @(currentController == "Attendance" ? "active" : string.Empty)"
-                                   asp-area="" asp-controller="Attendance" asp-action="Index">Attendance</a>
-                            </li>
-                        }
-                        @if (isAdmin)
-                        {
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark @(currentController == "Admin" ? "active" : string.Empty)" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Admin
+                                <a class="nav-link dropdown-toggle text-dark @(string.Equals(currentController, "Dashboard", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Teacher", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                                   href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Teaching
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Admin" asp-action="Leaderboard">Leaderboard</a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Admin" asp-action="Sentiment">Sentiment</a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" asp-controller="Settings" asp-action="Bonus">Bonus Config</a>
-                                    </li>
+                                    <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Teacher">Teacher portal</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Teachers" asp-action="Index">Teacher roster</a></li>
+                                </ul>
+                            </li>
+                        }
+                        @if (isStudent)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark @(string.Equals(currentController, "Dashboard", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Student", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)"
+                                   href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Student
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Student">Student hub</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Teachers" asp-action="Index">Rate a teacher</a></li>
                                 </ul>
                             </li>
                         }
                     </ul>
-                    <ul class="navbar-nav">
+                    <div class="d-flex align-items-center gap-3">
+                        <button id="themeToggle" hidden class="btn btn-outline-secondary btn-sm" type="button" aria-live="polite" aria-label="Toggle color theme">
+                            <span aria-hidden="true" data-theme-icon>☀️</span>
+                        </button>
                         @if (isAuthenticated)
                         {
-                            <li class="nav-item d-flex align-items-center me-2">
-                                <span class="nav-link text-dark">Hello, @displayName</span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Sign out</button>
-                                </form>
-                            </li>
+                            <div class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="avatar-circle">@userInitials</span>
+                                    <span class="d-none d-lg-inline">@displayName</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                                    <li><h6 class="dropdown-header">@displayName</h6></li>
+                                    <li><a class="dropdown-item" asp-controller="@portalController" asp-action="@portalAction">Go to @portalLabel</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="AccessDenied">Permissions</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" class="px-3 pb-2">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-link p-0">Sign out</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
                         }
                         else
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark @(currentController == "Account" ? "active" : string.Empty)" asp-controller="Account" asp-action="Login">Sign in</a>
-                            </li>
+                            <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Login">Sign in</a>
                         }
-                    </ul>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
     <div class="container">
+        @if (mustChangePassword)
+        {
+            <div class="alert alert-warning" role="alert">
+                For security, please <a class="alert-link" asp-controller="Account" asp-action="ChangePassword">update your password</a>.
+            </div>
+        }
         <main role="main" class="pb-3">
             @RenderBody()
         </main>

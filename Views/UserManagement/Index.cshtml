@@ -1,0 +1,146 @@
+@model RateMyTeacher.Models.UserManagement.UserManagementIndexViewModel
+@{
+    ViewData["Title"] = "User management";
+}
+
+<section class="py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h3 mb-0">User management</h1>
+            <p class="text-muted mb-0">Add admins, teachers, or students in a single place and keep credentials current.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-controller="Dashboard" asp-action="Admin">Back to admin</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">Existing users</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Role</th>
+                                    <th scope="col" class="text-nowrap">Last login</th>
+                                    <th scope="col" class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Users.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">No users found.</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    foreach (var user in Model.Users)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex flex-column">
+                                                    <span>@user.Name</span>
+                                                    @if (user.MustChangePassword)
+                                                    {
+                                                        <small class="text-warning">Needs new password</small>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td>@user.Email</td>
+                                            <td>@user.Role</td>
+                                            <td class="text-nowrap">@(user.LastLoginAt?.ToLocalTime().ToString("g") ?? "—")</td>
+                                            <td>
+                                                <div class="d-flex flex-column gap-2 align-items-end">
+                                                    <form asp-action="UpdateRole" method="post" class="d-flex gap-2" autocomplete="off">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="UserId" value="@user.Id" />
+                                                        <select name="Role" class="form-select form-select-sm">
+                                                            @foreach (var option in Model.AvailableRoles)
+                                                            {
+                                                                <option value="@option" selected="@(string.Equals(option, user.Role, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@option</option>
+                                                            }
+                                                        </select>
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                                                    </form>
+                                                    <form asp-action="ResetPassword" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="userId" value="@user.Id" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Reset password</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">Add a user</div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" autocomplete="off">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <div class="mb-3">
+                            <label asp-for="CreateUser.FirstName" class="form-label"></label>
+                            <input asp-for="CreateUser.FirstName" class="form-control" />
+                            <span asp-validation-for="CreateUser.FirstName" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="CreateUser.LastName" class="form-label"></label>
+                            <input asp-for="CreateUser.LastName" class="form-control" />
+                            <span asp-validation-for="CreateUser.LastName" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="CreateUser.Email" class="form-label"></label>
+                            <input asp-for="CreateUser.Email" class="form-control" placeholder="teacher@school.com" />
+                            <span asp-validation-for="CreateUser.Email" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="CreateUser.Username" class="form-label"></label>
+                            <input asp-for="CreateUser.Username" class="form-control" placeholder="teacher.one" />
+                            <span asp-validation-for="CreateUser.Username" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="CreateUser.Password" class="form-label"></label>
+                            <input asp-for="CreateUser.Password" class="form-control" type="password" />
+                            <span asp-validation-for="CreateUser.Password" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="CreateUser.Role" class="form-label">Assign role</label>
+                            <div class="btn-group w-100" role="group">
+                                @foreach (var option in Model.AvailableRoles)
+                                {
+                                    var isSelected = string.Equals(option, Model.CreateUser.Role, StringComparison.OrdinalIgnoreCase);
+                                    <input type="radio" class="btn-check" name="CreateUser.Role" id="role-@option" value="@option" @(isSelected ? "checked" : null)>
+                                    <label class="btn btn-outline-secondary" for="role-@option">@option</label>
+                                }
+                            </div>
+                            <span asp-validation-for="CreateUser.Role" class="text-danger"></span>
+                        </div>
+                        <div class="alert alert-secondary">
+                            Teachers and students get created with a temporary password reminder so they can change it on their first login.
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Create user</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

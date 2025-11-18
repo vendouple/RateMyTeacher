@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Identity;
 using RateMyTeacher.Models;
-using RateMyTeacher.Models.Enums;
 
 namespace RateMyTeacher.Data.Seed;
 
@@ -18,7 +17,7 @@ public static class SeedData
         var currentSemester = EnsureSemester(context);
 
         var passwordHasher = new PasswordHasher<User>();
-        var adminUser = EnsureUser(
+        _ = EnsureUser(
             context,
             passwordHasher,
             email: "admin@school.com",
@@ -46,7 +45,6 @@ public static class SeedData
         var studentProfile = EnsureStudent(context, studentUser, gradeLevel: 10);
 
         EnsureSystemSettings(context);
-        EnsureAiControlSettings(context, adminUser);
 
         if (!context.Ratings.Any())
         {
@@ -69,9 +67,8 @@ public static class SeedData
         var descriptions = new Dictionary<string, string>
         {
             [SystemSetting.Keys.Ai.GlobalEnabled] = "Enables or disables AI features globally.",
-            [SystemSetting.Keys.Ai.GlobalMode] = "Default AI response mode at the global scope.",
-            [SystemSetting.Keys.Ai.DepartmentDefaultMode] = "Fallback AI mode for departments without overrides.",
-            [SystemSetting.Keys.Ai.ClassDefaultMode] = "Fallback AI mode for classes without overrides."
+            [SystemSetting.Keys.Ai.TeacherMode] = "Choose Unrestricted, Guided, or Off for teachers.",
+            [SystemSetting.Keys.Ai.StudentMode] = "Choose Learning, Unrestricted, or Off for students."
         };
 
         foreach (var (key, defaultValue) in SystemSetting.Defaults.Ai)
@@ -89,26 +86,6 @@ public static class SeedData
                 context.SystemSettings.Add(setting);
             }
         }
-
-        context.SaveChanges();
-    }
-
-    private static void EnsureAiControlSettings(ApplicationDbContext context, User adminUser)
-    {
-        if (context.AIControlSettings.Any(s => s.Scope == AiControlScope.Global))
-        {
-            return;
-        }
-
-        context.AIControlSettings.Add(new AIControlSetting
-        {
-            Scope = AiControlScope.Global,
-            IsEnabled = true,
-            Mode = AiInteractionMode.Explain,
-            Notes = "Seeded global AI control entry.",
-            ModifiedById = adminUser.Id,
-            ModifiedAt = DateTime.UtcNow
-        });
 
         context.SaveChanges();
     }

@@ -16,9 +16,8 @@ public class SystemSetting
         public static class Ai
         {
             public const string GlobalEnabled = "AI.Control.GlobalEnabled";
-            public const string GlobalMode = "AI.Control.GlobalMode";
-            public const string DepartmentDefaultMode = "AI.Control.DepartmentDefaultMode";
-            public const string ClassDefaultMode = "AI.Control.ClassDefaultMode";
+            public const string TeacherMode = "AI.Control.TeacherMode";
+            public const string StudentMode = "AI.Control.StudentMode";
         }
     }
 
@@ -27,9 +26,8 @@ public class SystemSetting
         public static readonly IReadOnlyDictionary<string, string> Ai = new Dictionary<string, string>
         {
             [Keys.Ai.GlobalEnabled] = bool.TrueString,
-            [Keys.Ai.GlobalMode] = AiInteractionMode.Explain.ToString(),
-            [Keys.Ai.DepartmentDefaultMode] = AiInteractionMode.Explain.ToString(),
-            [Keys.Ai.ClassDefaultMode] = AiInteractionMode.Explain.ToString()
+            [Keys.Ai.TeacherMode] = TeacherAiMode.Guided.ToString(),
+            [Keys.Ai.StudentMode] = StudentAiMode.Learning.ToString()
         };
     }
 }

@@ -1,8 +1,27 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Portal";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="py-5 text-center">
+    <div class="container">
+        <h1 class="display-5 mb-3">Choose where you want to work</h1>
+        <p class="lead mb-4">
+            You will be redirected to the correct dashboard automatically. If that does not happen,
+            use the quick actions below to jump to the experience you need.
+        </p>
+        <div class="row g-3 justify-content-center">
+            <div class="col-md-3">
+                <a asp-controller="Account" asp-action="Login" class="btn btn-primary w-100">Sign in</a>
+            </div>
+            <div class="col-md-3">
+                <a asp-controller="Dashboard" asp-action="Admin" class="btn btn-outline-secondary w-100">Admin dashboard</a>
+            </div>
+            <div class="col-md-3">
+                <a asp-controller="Dashboard" asp-action="Teacher" class="btn btn-outline-secondary w-100">Teacher portal</a>
+            </div>
+            <div class="col-md-3">
+                <a asp-controller="Dashboard" asp-action="Student" class="btn btn-outline-secondary w-100">Student hub</a>
+            </div>
+        </div>
+    </div>
+</section>

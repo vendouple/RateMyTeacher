@@ -45,10 +45,21 @@ Tests are optional but encouraged for P1 items due to constitution Principle III
 
 **Purpose**: Enforce AI transparency, scoped toggles, and auditing before layering additional AI features.
 
-- [ ] T017 Add AI control scope configuration (Global/Department/Class) in `RateMyTeacher/Models/SystemSetting.cs` and register supporting tables in `RateMyTeacher/Data/ApplicationDbContext.cs`.
-- [ ] T018 Create `RateMyTeacher/Models/AIControlSetting.cs` plus EF migration to persist per-scope enablement, defaulting to "Explain" mode.
-- [ ] T019 Implement AI usage logging pipeline (service + repository) in `RateMyTeacher/Services/AIUsageService.cs` and hook into `GeminiService` to capture prompts, outputs, and viewed flags.
-- [ ] T020 Build AI governance admin UI in `RateMyTeacher/Controllers/SettingsController.cs` with Razor view `RateMyTeacher/Views/Settings/AiControls.cshtml` so admins can toggle modes and review recent logs.
+- [X] T017 Add AI control scope configuration (Global/Department/Class) in `RateMyTeacher/Models/SystemSetting.cs` and register supporting tables in `RateMyTeacher/Data/ApplicationDbContext.cs`.
+- [X] T018 Create `RateMyTeacher/Models/AIControlSetting.cs` plus EF migration to persist per-scope enablement, defaulting to "Explain" mode.
+- [X] T019 Implement AI usage logging pipeline (service + repository) in `RateMyTeacher/Services/AIUsageService.cs` and hook into `GeminiService` to capture prompts, outputs, and viewed flags.
+- [X] T020 Build AI governance admin UI in `RateMyTeacher/Controllers/SettingsController.cs` with Razor view `RateMyTeacher/Views/Settings/AiControls.cshtml` so admins can toggle modes and review recent logs.
+
+---
+
+## Phase 2C: Portal & Role Surfacing (Priority: P1 polish)
+
+**Purpose**: Give every role a dedicated jumping-off point, expose critical settings, and make user management accessible before layering future stories.
+
+- [X] T104 Create role-aware dashboards in `RateMyTeacher/Controllers/DashboardController.cs` with views under `Views/Dashboard/` so Admins, Teachers, and Students each have a landing page summarizing metrics.
+- [X] T105 Ship admin-focused user management workflows (`UserManagementController`, views, and supporting view models) to streamline adding users/roles and ensuring teacher/student profiles exist.
+- [X] T106 Refresh shared navigation in `Views/Shared/_Layout.cshtml` (plus supporting CSS) to expose portals, admin tools, theme toggle in the top bar, and profile dropdown.
+- [X] T107 Update authentication flow (`HomeController`, `AccountController`) so Home defaults to login and successful sign-ins redirect to the correct dashboard.
 
 ---
 

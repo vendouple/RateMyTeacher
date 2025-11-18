@@ -1,0 +1,105 @@
+@model TeacherDashboardViewModel
+@{
+    ViewData["Title"] = "Teacher portal";
+}
+
+<section class="py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-0">Welcome back, @Model.TeacherName</h1>
+            <p class="text-muted mb-0">Track ratings, follow up on AI summaries, and jump into the roster.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-controller="Teachers" asp-action="Index">View roster</a>
+    </div>
+
+    @if (!Model.HasProfile)
+    {
+        <div class="alert alert-warning" role="alert">
+            We could not find your teacher profile. Ask an admin to finish onboarding so you can access ratings.
+        </div>
+    }
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3">
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted text-uppercase fw-semibold small mb-1">Average rating</p>
+                    <h2 class="display-6 mb-0">@Model.AverageRating.ToString("0.0")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted text-uppercase fw-semibold small mb-1">Ratings received</p>
+                    <h2 class="display-6 mb-0">@Model.RatingsCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted text-uppercase fw-semibold small mb-1">AI summaries</p>
+                    <h2 class="display-6 mb-0">@Model.SummaryCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <p class="text-muted text-uppercase fw-semibold small mb-1">AI sessions</p>
+                    <h2 class="display-6 mb-0">@Model.AiSessions</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">Latest feedback</div>
+                <div class="card-body">
+                    @if (Model.RecentRatings.Count == 0)
+                    {
+                        <p class="text-muted mb-0">You have not collected any ratings yet. Encourage students to share feedback.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var rating in Model.RecentRatings)
+                            {
+                                <li class="list-group-item px-0">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="fw-semibold">@rating.StudentName</div>
+                                            <div class="text-muted small">@rating.SemesterName • @rating.Stars ★</div>
+                                            @if (!string.IsNullOrWhiteSpace(rating.Comment))
+                                            {
+                                                <p class="mb-0">@rating.Comment</p>
+                                            }
+                                        </div>
+                                        <span class="text-muted small">@rating.CreatedAt.ToLocalTime().ToString("g")</span>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">Quick links</div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        @foreach (var link in Model.QuickLinks)
+                        {
+                            var href = Url.Action(link.Action, link.Controller, link.RouteValues);
+                            <a class="list-group-item list-group-item-action" href="@(href ?? "#")">@link.Label</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -12,40 +12,13 @@ public class AiGlobalSettingsForm
     [DisplayName("AI features enabled")]
     public bool IsGloballyEnabled { get; set; } = true;
 
-    [DisplayName("Global default mode")]
+    [DisplayName("Teacher AI mode")]
     [Required]
-    public AiInteractionMode GlobalMode { get; set; } = AiInteractionMode.Explain;
+    public TeacherAiMode TeacherMode { get; set; } = TeacherAiMode.Guided;
 
-    [DisplayName("Department fallback mode")]
+    [DisplayName("Student AI mode")]
     [Required]
-    public AiInteractionMode DepartmentMode { get; set; } = AiInteractionMode.Explain;
-
-    [DisplayName("Class fallback mode")]
-    [Required]
-    public AiInteractionMode ClassMode { get; set; } = AiInteractionMode.Explain;
-}
-
-public class AiScopeForm
-{
-    public int? Id { get; set; }
-
-    [Required]
-    [DisplayName("Scope type")]
-    public AiControlScope Scope { get; set; }
-
-    [DisplayName("Scope identifier")]
-    public int? ScopeId { get; set; }
-
-    [DisplayName("AI enabled for scope")]
-    public bool IsEnabled { get; set; } = true;
-
-    [DisplayName("Mode")]
-    [Required]
-    public AiInteractionMode Mode { get; set; } = AiInteractionMode.Explain;
-
-    [DisplayName("Notes")]
-    [StringLength(250)]
-    public string? Notes { get; set; }
+    public StudentAiMode StudentMode { get; set; } = StudentAiMode.Learning;
 }
 
 public class AiUsageLogFilterModel
@@ -74,19 +47,7 @@ public class AiUsageLogFilterModel
     public AiUsageLogQuery ToQuery() => new(UserId, ClassId, Mode, From, To, Take);
 }
 
-public sealed record AiScopeViewModel(
-    int Id,
-    AiControlScope Scope,
-    int? ScopeId,
-    bool IsEnabled,
-    AiInteractionMode Mode,
-    string? Notes,
-    DateTime ModifiedAt,
-    string? ModifiedBy);
-
 public sealed record AiControlsPageViewModel(
     AiGlobalSettingsForm GlobalSettings,
-    IReadOnlyList<AiScopeViewModel> ScopeSettings,
     IReadOnlyList<AiUsageLogDto> UsageLogs,
-    AiUsageLogFilterModel Filter,
-    AiScopeForm ScopeForm);
+    AiUsageLogFilterModel Filter);
