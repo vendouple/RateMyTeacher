@@ -1,0 +1,148 @@
+@model TeacherDetailViewModel
+@{
+    ViewData["Title"] = Model.Teacher.Summary.FullName;
+}
+
+<a asp-action="Index" class="text-decoration-none d-inline-flex align-items-center mb-3">
+    <span class="me-2">←</span> Back to teachers
+</a>
+
+<section class="teacher-detail card-neumorphic mb-4">
+    <div>
+        <p class="text-muted mb-1">@(!string.IsNullOrWhiteSpace(Model.Teacher.Summary.Department) ? Model.Teacher.Summary.Department : "Department TBD")</p>
+        <h1 class="h3 fw-semibold">@Model.Teacher.Summary.FullName</h1>
+        <p class="mb-0">@(string.IsNullOrWhiteSpace(Model.Teacher.Bio) ? "This teacher has not added a bio yet." : Model.Teacher.Bio)</p>
+    </div>
+    <div class="rating-overview text-center">
+        <span class="display-5 fw-bold d-block">@Model.Teacher.Summary.AverageRating.ToString("0.0")</span>
+        <small class="text-muted">@Model.Teacher.Summary.TotalRatings @((Model.Teacher.Summary.TotalRatings == 1) ? "rating" : "ratings") this semester</small>
+    </div>
+</section>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert alert-success">@Model.StatusMessage</div>
+}
+
+@if (Model.CanSubmitRating)
+{
+    <section class="card-neumorphic mb-4">
+        <h2 class="h5 mb-3">Share your rating</h2>
+        <form asp-action="Rate" method="post" class="rating-form">
+            @Html.AntiForgeryToken()
+            <input asp-for="RatingForm.TeacherId" type="hidden" />
+            <div data-rating-input class="rating-form__stars mb-3">
+                <label class="form-label d-block">Your score</label>
+                <input asp-for="RatingForm.Stars" type="hidden" />
+                <div class="rating-stars" role="radiogroup" aria-label="Select star rating">
+                    @for (var i = 1; i <= 5; i++)
+                    {
+                        var isActive = Model.RatingForm.Stars == i;
+                        <button type="button" class="rating-star @(isActive ? "is-active" : string.Empty)" data-value="@i" aria-pressed="@(isActive.ToString().ToLower())">
+                            ★
+                            <span class="visually-hidden">@i star(s)</span>
+                        </button>
+                    }
+                </div>
+                <small class="text-muted" data-rating-live>Selected: @Model.RatingForm.Stars star(s)</small>
+                <span asp-validation-for="RatingForm.Stars" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="RatingForm.Comment" class="form-label">Optional comment</label>
+                <textarea asp-for="RatingForm.Comment" class="form-control" rows="4" placeholder="What stood out about this lesson?"></textarea>
+                <span asp-validation-for="RatingForm.Comment" class="text-danger"></span>
+            </div>
+
+            @if (Model.ExistingRating is not null)
+            {
+                <p class="text-muted small">You previously rated this teacher @Model.ExistingRating.Stars star(s) on @Model.ExistingRating.CreatedAt.ToLocalTime():d.</p>
+            }
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <a asp-action="Details" asp-route-id="@Model.Teacher.Summary.Id" class="btn btn-outline-secondary">Reset</a>
+            </div>
+            <div asp-validation-summary="ModelOnly" class="text-danger mt-3"></div>
+        </form>
+    </section>
+}
+else
+{
+    <div class="alert alert-info">Only students can submit ratings. Sign in with a student account to participate.</div>
+}
+
+<section class="card-neumorphic">
+    <h2 class="h5">Recent feedback</h2>
+    @if (!Model.Teacher.RecentRatings.Any())
+    {
+        <p class="text-muted mb-0">No ratings yet this semester. Be the first to rate this teacher.</p>
+    }
+    else
+    {
+        <div class="list-group list-group-flush">
+            @foreach (var rating in Model.Teacher.RecentRatings)
+            {
+                <article class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>@rating.StudentName</strong>
+                        <span class="badge bg-warning text-dark">@rating.Stars ★</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(rating.Comment))
+                    {
+                        <p class="mb-1">@rating.Comment</p>
+                    }
+                    <small class="text-muted">@rating.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</small>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@section Styles {
+    <style>
+        .card-neumorphic {
+            border-radius: 18px;
+            background: var(--bs-body-bg);
+            box-shadow: -12px -12px 24px rgba(255, 255, 255, 0.4), 12px 12px 24px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+        }
+
+        .teacher-detail {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .rating-stars {
+            display: inline-flex;
+            gap: 0.25rem;
+        }
+
+        .rating-star {
+            border: none;
+            background: transparent;
+            font-size: 1.75rem;
+            line-height: 1;
+            cursor: pointer;
+            color: #cfd8dc;
+            transition: transform 0.15s ease, color 0.15s ease;
+        }
+
+        .rating-star.is-active,
+        .rating-star:hover,
+        .rating-star:focus-visible {
+            color: #ffb703;
+            transform: scale(1.1);
+        }
+
+        .rating-overview {
+            min-width: 140px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="~/js/rating.js" asp-append-version="true"></script>
+}

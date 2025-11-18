@@ -1,0 +1,77 @@
+@model TeacherListViewModel
+@{
+    ViewData["Title"] = "Teachers";
+}
+
+<section class="page-header">
+    <h1 class="display-5 fw-semibold">Meet the teachers</h1>
+    <p class="text-muted">Browse every teacher, review their average rating for the current semester, and open a profile to share your feedback.</p>
+</section>
+
+@if (!Model.Teachers.Any())
+{
+    <div class="alert alert-info shadow-sm">No teachers are available yet. An administrator should seed sample data to get started.</div>
+}
+else
+{
+    <div class="teacher-grid">
+        @foreach (var teacher in Model.Teachers)
+        {
+            <article class="teacher-card card-neumorphic">
+                <div class="teacher-card__header">
+                    <div>
+                        <h2 class="h5 mb-1">@teacher.FullName</h2>
+                        <p class="text-muted mb-0">@(!string.IsNullOrWhiteSpace(teacher.Department) ? teacher.Department : "Department TBD")</p>
+                    </div>
+                    <div class="teacher-rating-chip">
+                        <span class="score">@teacher.AverageRating.ToString("0.0")</span>
+                        <small>@teacher.TotalRatings @((teacher.TotalRatings == 1) ? "rating" : "ratings")</small>
+                    </div>
+                </div>
+                <div class="teacher-card__actions">
+                    <a asp-action="Details" asp-route-id="@teacher.Id" class="btn btn-primary btn-sm">View details</a>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@section Styles {
+    <style>
+        .teacher-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .card-neumorphic {
+            border-radius: 18px;
+            background: var(--bs-body-bg);
+            box-shadow: -12px -12px 24px rgba(255, 255, 255, 0.4), 12px 12px 24px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+        }
+
+        .teacher-card__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .teacher-rating-chip {
+            text-align: right;
+        }
+
+        .teacher-rating-chip .score {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .teacher-card__actions {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+    </style>
+}

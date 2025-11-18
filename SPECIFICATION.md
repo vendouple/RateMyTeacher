@@ -76,6 +76,7 @@
 - Export to PDF or Word format
 - Share with students via platform
 - Archive for future reference
+- Structured output contract that always renders the following sections in order: **Main Topics**, **Key Concepts**, **Important Takeaways**, **Study Tips**. Each section is rendered as bullet points and the combined body is capped at 300 words with a pre-validation step before the Gemini call (aligns with common academic summary guidance such as [Summary – Wikipedia](https://en.wikipedia.org/wiki/Summary)).
 
 **User Stories**:
 
@@ -117,6 +118,7 @@
 - SMS/Email notification service
 - Analytics dashboard for patterns
 - Export to Excel/CSV
+- Role-aware absence states: teacher-submitted absences stay visible only to Admin/Department Head roles until a substitute is assigned; once confirmed, enrolled students and parents receive read-only notices while substitute teachers gain schedule access (mirrors substitute workflows documented in [Substitute teacher – Wikipedia](https://en.wikipedia.org/wiki/Substitute_teacher)).
 
 ---
 
@@ -272,6 +274,23 @@
 - One vote per student per teacher per term
 - Ratings from current semester only
 - Ties split the bonus equally
+
+**Bonus Tier Priority & Ranges**:
+
+- Admins (or any role granted the "Manage Bonus Tiers" permission) can mix position-based tiers (e.g., Rank 1, Rank 2) with range-based tiers (e.g., Ranks 5–10). Position-based tiers are resolved first, highest rank to lowest, so a teacher cannot receive two payouts.
+- After position tiers are awarded, range tiers are applied to the remaining eligible ranks. Range tiers treat each teacher in the range identically and pro-rate shared amounts if admins mark the tier as splittable.
+- Currency, payout amount, and the "requires approval" flag are editable per tier so schools can localize to USD, IDR, or any custom currency without hardcoding.
+
+**Leaderboard Acceptance Criteria**:
+
+- Rankings are recalculated nightly and on-demand when bonus tiers or qualifying votes change. The ranking job filters out teachers below the configured minimum vote count and stores the inputs used so QA can deterministically replay the calculation.
+- Acceptance tests must cover ties (verifying the "split equally" rule), exclusion of ineligible teachers, and verification that payouts map 1:1 with the tier definition in the admin UI.
+- A snapshot endpoint returns the computed leaderboard plus the checksum of ratings used, enabling regression tests to assert that the same dataset always produces the same ordering.
+
+**Enrollment Enforcement**:
+
+- Every rating must reference an `Enrollment` record that links Student → Class Section → Teacher for the active term. The rating API validates this relationship server-side and blocks submissions when no enrollment exists (mirrors Google-Classroom-style roster enforcement).
+- Admins can bulk-import enrollments or delegate the permission to Department Heads; without an enrollment, the UI hides the "Rate" action entirely.
 
 ---
 

@@ -13,28 +13,22 @@ public class Teacher
     [ForeignKey(nameof(UserId))]
     public User User { get; set; } = null!;
 
-    [Required]
-    [MaxLength(100)]
-    public string FirstName { get; set; } = string.Empty;
-
-    [Required]
-    [MaxLength(100)]
-    public string LastName { get; set; } = string.Empty;
-
-    [MaxLength(200)]
-    public string? Email { get; set; }
-
-    [MaxLength(500)]
+    [MaxLength(1000)]
     public string? Bio { get; set; }
 
-    [MaxLength(200)]
+    [MaxLength(500)]
+    public string? ProfileImageUrl { get; set; }
+
+    [MaxLength(100)]
     public string? Department { get; set; }
 
     public DateTime HireDate { get; set; } = DateTime.UtcNow;
-
     public bool IsActive { get; set; } = true;
-
+    public bool AllowAiTools { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     public DateTime? UpdatedAt { get; set; }
+
+    public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
+    public ICollection<TeacherRanking> Rankings { get; set; } = new List<TeacherRanking>();
+    public ICollection<AISummary> Summaries { get; set; } = new List<AISummary>();
 }

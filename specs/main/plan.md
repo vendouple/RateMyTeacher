@@ -4,13 +4,35 @@
 
 ## Summary
 
-RateMyTeacher is a comprehensive educational platform for teacher evaluation, attendance tracking, and learning management. The system supports:
+RateMyTeacher is a comprehensive educational platform for modern teaching workflows. The SPEC defines four capability pillars that this plan now mirrors one-to-one:
 
-- **Phase 1 (P1)**: Teacher ratings, leaderboards with configurable bonuses, authentication, AI lesson summaries
-- **Phase 2 (P2)**: Discord-style multi-role permission system, attendance tracking, AI companion controls
-- **Phase 3 (P3)**: Student LMS features (assignments, notes, gamification, reading tracking)
+1. **Lesson & Schedule Management** – timetable automation, substitution workflows, AI lesson planning assistant, structured lesson summaries, and attendance/absence tracking.
+2. **Teaching Log & Feedback** – daily “What I taught” logs, voice-to-text reflections, student post-class feedback, anonymous channels, and AI-generated weekly/monthly reports.
+3. **Performance & Bonus System** – RateMyTeacher ratings, Discord-style permissions, leaderboard-driven bonuses, recognition badges, and teacher improvement recommendations.
+4. **Grades & Data Unification** – unified gradebook, cross-term tracking, subject-wide comparisons, and AI alerts for anomalies.
 
-**Technical Approach**: ASP.NET Core 10 MVC with SQLite embedded database, Entity Framework Core for ORM, Google Gemini 2.5 Flash for AI features, and Razor Views with vanilla JavaScript for the UI.
+**Release Cadence & Phases** (detailed roadmap below): Phase 1 establishes infrastructure, Phase 2A locks accessibility/localization (complete), Phase 2B introduces AI governance + logging, Phase 3–4 deliver RateMyTeacher MVP, Phase 5A focuses on AI lesson experiences, Phase 5B brings attendance & schedule operations, Phase 6 extends sentiment + anonymous feedback, and Phase 7 unifies grades/insights.
+
+**Technical Approach**: ASP.NET Core 10 MVC with SQLite embedded database, Entity Framework Core for ORM, Google Gemini 2.5 Flash for AI features, Razor Views with vanilla JavaScript, Chart.js for analytics, SignalR for timetable updates, and background services for reminders/reporting.
+
+## Phase & Story Alignment
+
+| Phase | Priority | Scope | SPEC References |
+|-------|----------|-------|-----------------|
+| Phase 1 | P1 | Project setup, EF Core, auth shell | §3.1 RateMyTeacher (infrastructure) |
+| Phase 2 | P1 | Foundational data models + services | §3.1 |
+| Phase 2A ✅ | P1 | Accessibility + localization baseline | Principles, §Lesson intro |
+| Phase 2B | P1 | AI control hierarchy, AI usage logging, safety toggles | §1.3, §3 AI Transparency |
+| Phase 3 (US1) | P1 | Student ratings + enrollment enforcement | §3.1 RateMyTeacher |
+| Phase 4 (US2) | P1 | Leaderboard, payouts, bonus audit trail | §3.1 RateMyTeacher |
+| Phase 5A (US3) | P2 | AI lesson summary generator + structured outputs | §1.3 Lesson Summary Generator |
+| Phase 5B (US4) | P2 | Lesson planning assistant, teaching resource hub | §1.2 Lesson Planning Assistant |
+| Phase 6A (US5) | P2 | Attendance & absence tracker with substitution + timetable automation | §1.1 Timetable, §1.4 Attendance |
+| Phase 6B (US6) | P2 | Teaching log, voice-to-text, AI weekly/monthly reports | §2.1–§2.4 |
+| Phase 7A (US7) | P3 | Anonymous feedback, recognition badges, improvement programme | §3.2–§3.4 |
+| Phase 7B (US8) | P3 | Gradebook, cross-term tracking, subject comparisons, AI alerts | §4.1–§4.4 |
+
+Each user story bundles domain models, services, UI, telemetry, and acceptance tests so QA can validate increments independently.
 
 ## Technical Context
 
@@ -21,7 +43,8 @@ RateMyTeacher is a comprehensive educational platform for teacher evaluation, at
 - Entity Framework Core 10.0 (ORM & Migrations)
 - Google.GenerativeAI (Gemini 2.5 Flash integration)
 - DotNetEnv (environment variable management)
-- Chart.js (client-side data visualization)
+- Chart.js + SignalR (client-side data visualization & realtime updates)
+- xUnit, Moq, EFCore.InMemory (test harness per TDD mandate)
 
 **Storage**: SQLite (embedded, no external database server required)  
 **Testing**: xUnit, Moq (for mocking), EF Core InMemory (integration tests)  
@@ -29,16 +52,20 @@ RateMyTeacher is a comprehensive educational platform for teacher evaluation, at
 **Project Type**: Web application (single ASP.NET Core MVC project)  
 **Performance Goals**:
 
-- <200ms response time for page loads (p95)
+- <200 ms response time for page loads (p95)
 - Support 100+ concurrent users
-- <100ms for permission evaluation queries
+- <100 ms for permission evaluation queries
+- Gemini calls (including retries) finish within 30 seconds
+- Reminder jobs send notifications within ±1 minute of the 15-minute mark
 
 **Constraints**:
 
 - Must work with embedded SQLite (no external DB infrastructure)
 - API key stored in `.env` file only (never in version control)
+- Bonus configurations must live in the database with admin CRUD (per spec)
 - HTTPS-only in production
-- Must support phased rollout (P1/P2/P3 features)
+- Neuromorphic design + localization cannot regress; dark/light parity required at all milestones
+- Must support phased rollout (P1/P2/P3 features) with feature flags hiding incomplete modules
 
 **Scale/Scope**:
 
@@ -46,6 +73,7 @@ RateMyTeacher is a comprehensive educational platform for teacher evaluation, at
 - ~50-100 teachers per school
 - ~10-20 admins per school
 - Multiple semesters per year (historical data retention)
+- AI usage logs retained 90 days per safety rules
 
 ## Constitution Check
 
@@ -53,7 +81,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### I. Security-First Development (NON-NEGOTIABLE)
 
-- ✅ Input validation on client and server sides
+- ✅ Input validation on client and server sides (controllers, view models, JS)
 - ✅ SQL injection prevention via EF Core parameterized queries
 - ✅ XSS protection via Razor output encoding and CSP headers
 - ✅ HTTPS-only enforced in production (launchSettings.json + middleware)
@@ -77,7 +105,8 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 ### III. Test-Driven Development for Core Features (NON-NEGOTIABLE)
 
-- ✅ P1 features: TDD with Red-Green-Refactor
+- ✅ P1 features: TDD with Red-Green-Refactor (failing tests before implementation)
+- ✅ Regression tests for leaderboard checksum endpoint and AI summary formatting
 - ✅ Target: 80%+ coverage on business logic (Services, Permission evaluation)
 - ✅ Integration tests required for: Auth flows, Permission checks, DB operations, Gemini API
 - ✅ Unit tests required for: Service layer, Permission logic, Bonus calculations
@@ -89,7 +118,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - ✅ Three-level AI control: Global Admin → Class Admin → Teacher
 - ✅ AI modes visible to students: "Explain", "Guide", "Show Answer"
 - ✅ AI failures show user-friendly messages with retry
-- ✅ AI usage logged for auditing (AIUsageLog table)
+- ✅ AI usage logged for auditing (AIUsageLog table) with "Viewed" indicator and 90-day retention
 
 **Status**: ✅ PASS
 
@@ -99,7 +128,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - ✅ Attendance modifications logged (AttendanceLog table)
 - ✅ Grade changes auditable (GradeLog table)
 - ✅ Teacher absence workflow tracked (TeacherAbsence table with approval status)
-- ✅ Bonus tier changes versioned (BonusConfig table with modified timestamp)
+- ✅ Bonus tier changes versioned (BonusConfig + BonusTier tables plus audit trail)
 - ✅ Soft deletes for Users, Classes, Roles, Departments (IsDeleted flag)
 
 **Status**: ✅ PASS
@@ -110,13 +139,15 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - ✅ Phase 2: Permissions, attendance, settings, AI controls
 - ✅ Phase 3: Student LMS, gamification, notes, extra classes
 - ✅ Department feature toggleable via SystemSetting (EnableDepartments flag)
+- ✅ Feature flags guard incomplete LMS/AI features in production
 - ✅ Database schema supports all phases from P1 (nullable columns or separate tables)
 
 **Status**: ✅ PASS
 
 ### VII. Accessibility & Localization-Ready
 
-- ✅ ASP.NET Core i18n framework configured (base: English)
+- ✅ ASP.NET Core i18n framework configured (base: English plus Indonesian, Mandarin roadmap)
+- ✅ Prefers-reduced-motion + theme preload to avoid flashes
 - ✅ Resource files structured by controller/view
 - ✅ ARIA labels for interactive elements
 - ✅ Keyboard navigation support
@@ -149,18 +180,23 @@ specs/main/
 ```text
 RateMyTeacher/
 ├── Controllers/
-│   ├── HomeController.cs           # Landing, dashboard
+│   ├── HomeController.cs           # Landing, dashboard, badges
 │   ├── TeachersController.cs       # Teacher listing, profiles
-│   ├── RatingsController.cs        # Rating submission, history
-│   ├── LeaderboardController.cs    # Rankings, bonus display
+│   ├── RatingsController.cs        # Rating submission, history, enrollment checks
+│   ├── LeaderboardController.cs    # Rankings, public display
+│   ├── AdminController.cs          # Leaderboard admin, bonus config, reports
 │   ├── AuthController.cs           # Login, logout, register
 │   ├── AttendanceController.cs     # Teacher/student attendance
+│   ├── ScheduleController.cs       # Timetable, reminders, substitutions
 │   ├── PermissionsController.cs    # Role/permission management
-│   ├── SettingsController.cs       # System settings, bonus config
+│   ├── SettingsController.cs       # System settings, AI controls
 │   ├── AISummaryController.cs      # AI lesson summaries
 │   ├── AICompanionController.cs    # AI study companion (P3)
 │   ├── AssignmentsController.cs    # Assignments, submissions (P3)
-│   └── NotesController.cs          # Student notes, sharing (P3)
+│   ├── NotesController.cs          # Student notes, sharing (P3)
+│   ├── LogsController.cs           # Teaching log entries, voice notes
+│   ├── ReportsController.cs        # AI weekly/monthly reports
+│   └── SentimentController.cs      # Feedback analytics
 │
 ├── Models/
 │   ├── User.cs                     # Base user (Student/Teacher/Admin)
@@ -170,7 +206,8 @@ RateMyTeacher/
 │   ├── Comment.cs                  # Rating comments
 │   ├── Semester.cs                 # Academic semester
 │   ├── BonusConfig.cs              # Dynamic bonus configuration
-│   ├── BonusTier.cs                # Bonus tiers (1st: $10, 2nd: $5, etc.)
+│   ├── BonusTier.cs                # Bonus tiers (position & range)
+│   ├── Bonus.cs                    # Awarded payouts (audit)
 │   ├── TeacherRanking.cs           # Computed rankings per semester
 │   │
 │   ├── Department.cs               # Optional departments (P2)
@@ -184,6 +221,7 @@ RateMyTeacher/
 │   ├── Attendance.cs               # Student daily attendance (P2)
 │   ├── AttendanceLog.cs            # Audit trail for attendance changes (P2)
 │   ├── TeacherAbsence.cs           # Teacher absence requests (P2)
+│   ├── SubstitutionAssignment.cs   # Substitute management (P2)
 │   ├── Schedule.cs                 # Class schedules (P2)
 │   │
 │   ├── Assignment.cs               # Homework/assignments (P3)
@@ -195,21 +233,27 @@ RateMyTeacher/
 │   ├── ExtraClass.cs               # Extra meetings (Zoom, Meet) (P3)
 │   │
 │   ├── AISummary.cs                # AI-generated lesson summaries
-│   ├── AIUsageLog.cs               # AI usage audit trail
+│   ├── AIUsageLog.cs               # AI usage audit trail (viewed flag)
+│   ├── TeachingLog.cs              # Daily topics, attachments, transcripts
+│   ├── ReportSnapshot.cs           # AI weekly/monthly reports
 │   ├── SentimentAnalysis.cs        # Sentiment of comments (P3)
-│   ├── SystemSetting.cs            # Global settings (e.g., EnableDepartments)
+│   ├── SystemSetting.cs            # Global settings (EnableDepartments, AI toggles)
 │   └── ErrorViewModel.cs           # Error page model
 │
 ├── Services/
-│   ├── RatingService.cs            # Rating submission, validation
-│   ├── RankingService.cs           # Leaderboard calculation
-│   ├── BonusService.cs             # Bonus calculation from config
+│   ├── RatingService.cs            # Rating submission, validation, enrollment enforcement
+│   ├── LeaderboardService.cs       # Leaderboard calculation, checksum snapshots
+│   ├── BonusService.cs             # Bonus calculation from DB config + audit
 │   ├── PermissionService.cs        # Permission evaluation (P2)
 │   ├── AttendanceService.cs        # Attendance tracking (P2)
+│   ├── ScheduleService.cs          # Timetable automation (SignalR, reminders)
 │   ├── GeminiService.cs            # Gemini API integration
 │   ├── AICompanionService.cs       # AI study companion (P3)
 │   ├── SentimentService.cs         # Sentiment analysis (P3)
-│   └── NotificationService.cs      # Alerts (future)
+│   ├── LessonLogService.cs         # Teaching logs, voice-to-text
+│   ├── ReportService.cs            # AI weekly reports
+│   ├── NotificationService.cs      # Alerts (email/push)
+│   └── LocalizationService.cs      # Resource helpers
 │
 ├── Data/
 │   ├── ApplicationDbContext.cs     # EF Core DbContext
@@ -232,9 +276,14 @@ RateMyTeacher/
 │
 ├── wwwroot/
 │   ├── css/
-│   │   └── site.css               # Dark/light mode, neuromorphic
+│   │   ├── site.css               # Base styling
+│   │   └── neuromorphic.css       # Design tokens/components
 │   ├── js/
-│   │   └── site.js                # Client-side interactions
+│   │   ├── site.js                # Client-side interactions
+│   │   ├── theme.js               # Theme toggle
+│   │   ├── schedule.js            # Timetable interactions
+│   │   ├── ai.js                  # AI summary helpers
+│   │   └── analytics.js           # Chart/dashboard helpers
 │   └── lib/                       # Bootstrap, jQuery, Chart.js
 │
 ├── Resources/                     # Localization (i18n)
@@ -247,6 +296,21 @@ RateMyTeacher/
 ├── Program.cs                     # App entry point
 └── RateMyTeacher.csproj           # Project file
 ```
+
+## User Stories (Derived from SPECIFICATION.md)
+
+| ID | Priority | Title | Independent Test Criteria |
+|----|----------|-------|---------------------------|
+| US1 | P1 | Student ratings w/ enrollment enforcement | Student submits rating once per teacher/semester; UI hides button when no enrollment; DB proves unique constraint |
+| US2 | P1 | Leaderboard & bonus payouts | Admin recalculates rankings, sees threshold filtering, and payout audit entries persist |
+| US3 | P2 | AI lesson summary generator | Teacher captures lesson notes, receives <300-word structured summary (Main Topics → Study Tips) with retries/logging |
+| US4 | P2 | Lesson planning assistant | Teacher receives curriculum-aligned suggestions + resources per class, can bookmark and export |
+| US5 | P2 | Attendance & timetable automation | Teacher sees “now/next” schedule, marks attendance (QR optional), admin assigns substitutes, notifications fire 15 minutes prior |
+| US6 | P2 | Teaching log, voice-to-text, AI weekly/monthly reports | Teacher logs daily topics (attachments + transcripts) and admin downloads aggregated AI report |
+| US7 | P3 | Anonymous feedback, recognition badges, improvement programme | Student posts anonymous feedback, admin moderates, automatic badges appear on teacher profile, improvement tips generated |
+| US8 | P3 | Unified gradebook & analytics | Counselor views cross-term grades, radar chart, AI alerts for anomalies, CSV export |
+
+These stories supplement Phase 2B AI governance tasks and ensure every SPEC section has an associated implementation slice.
 
 **Structure Decision**: Single ASP.NET Core MVC project with clear separation of concerns (Controllers, Models, Services, Data). This matches the "web application" pattern but uses server-side rendering instead of a separate frontend/backend split, which is appropriate for the MVC architecture.
 
@@ -273,25 +337,46 @@ RateMyTeacher/
    - Research: Safety settings for educational content
    - Output: `research.md` section on Gemini integration patterns
 
-3. **Attendance Tracking Best Practices**
+3. **Attendance & Schedule Automation**
 
    - Research: Daily vs per-class attendance models
    - Research: Mid-day status updates (sick, competition, out-of-class)
-   - Research: Approval workflows for teacher absences
-   - Output: `research.md` section on attendance system design
+   - Research: Approval + substitution workflows for teacher absences
+   - Research: Reminder scheduling (SignalR, background jobs, calendar sync)
+   - Output: `research.md` section on attendance & timetable automation
 
-4. **Bonus Configuration System**
+4. **Bonus Configuration System & Audit**
 
    - Research: Database-driven configuration vs environment variables
    - Research: Supporting range-based bonuses (5th-10th: $2) and single positions (1st: $10)
    - Research: Hot-reload strategies for configuration changes
-   - Output: `research.md` section on dynamic configuration patterns
+   - Research: Audit trails and checksum snapshot endpoints
+   - Output: `research.md` section on dynamic configuration + audit patterns
 
-5. **Soft Delete Pattern in EF Core**
+5. **Soft Delete & Audit Trails in EF Core**
    - Research: Global query filters for IsDeleted
    - Research: Shadow properties vs explicit columns
    - Research: Cascade delete behavior with soft deletes
-   - Output: `research.md` section on soft delete implementation
+   - Research: Audit log modeling for permissions/AI usage
+   - Output: `research.md` section on soft delete + audit implementation
+
+6. **Lesson Planning Assistant & Content Recommendations**
+   - Research: Curriculum tagging schemas and metadata storage
+   - Research: External content APIs (OER Commons, Khan Academy) for enrichment
+   - Research: Prompt engineering for “suggest three activities” instructions per grade level
+   - Output: `research.md` section on AI-assisted planning best practices
+
+7. **Voice-to-Text & Multi-Lingual Support**
+   - Research: Azure Speech vs Google Cloud Speech trade-offs for en/id/zh
+   - Research: Browser-based recording constraints and fallbacks for mobile
+   - Research: Accessibility guidelines for transcript editing
+   - Output: `research.md` section documenting chosen provider + UX considerations
+
+8. **Grade Analytics & AI Alerts**
+   - Research: Statistical methods for anomaly detection (z-score, EWMA)
+   - Research: Data visualization libraries for radar charts + trend lines
+   - Research: GDPR/FERPA implications for automated alerts
+   - Output: `research.md` section listing detection thresholds and notification hooks
 
 ### Research Deliverables
 
@@ -310,7 +395,7 @@ RateMyTeacher/
 
 **File**: `specs/main/data-model.md`
 
-**Entities to Define** (27 total):
+**Entities to Define** (~40 total to cover LMS + automation):
 
 #### Core Entities (P1)
 
@@ -319,9 +404,10 @@ RateMyTeacher/
 - Student (extends User: GradeLevel, ParentContact)
 - Semester (Id, Name, StartDate, EndDate, AcademicYear)
 - Rating (StudentId, TeacherId, SemesterId, Stars, Comment, CreatedAt) [Unique(StudentId, TeacherId, SemesterId)]
-- BonusConfig (MinimumRatingsThreshold, CreatedAt, ModifiedAt)
-- BonusTier (ConfigId, Position, RangeStart, RangeEnd, Amount) [e.g., 1st: $10, 5th-10th: $2]
-- TeacherRanking (TeacherId, SemesterId, Rank, AverageRating, TotalRatings, BonusAmount)
+- BonusConfig (MinimumRatingsThreshold, Currency, CreatedAt, ModifiedAt)
+- BonusTier (ConfigId, Position, RangeStart, RangeEnd, Amount, SplitMode, RequiresApproval)
+- Bonus (TeacherId, SemesterId, TierId, Amount, AwardedBy, AwardedAt, BatchId)
+- TeacherRanking (TeacherId, SemesterId, Rank, AverageRating, TotalRatings, BonusAmount, SnapshotChecksum)
 
 #### Permission System Entities (P2)
 
@@ -333,12 +419,15 @@ RateMyTeacher/
 - UserRole (UserId, RoleId, Scope [Global/Department/Class], ScopeId, AssignedBy, AssignedAt)
 - ClassPermission (ClassId, UserId, PermissionId, GrantedBy, GrantedAt)
 
-#### Attendance Entities (P2)
+#### Attendance & Schedule Entities (P2)
 
 - Schedule (Id, ClassId, TeacherId, DayOfWeek, StartTime, EndTime)
 - Attendance (StudentId, ClassId, Date, Status [Present/Sick/OutOfClass/Absent], UpdatedBy, UpdatedAt)
+
 - AttendanceLog (AttendanceId, OldStatus, NewStatus, ChangedBy, ChangedAt, Reason)
 - TeacherAbsence (TeacherId, Date, Reason, Status [Pending/Approved/Rejected], RequestedAt, ApprovedBy, ApprovedAt, SubstituteTeacherId)
+- SubstitutionAssignment (Id, AbsenceId, SubstituteTeacherId, ClassId, AssignedAt)
+- Reminder (Id, ScheduleId, TriggerAt, SentAt, Channel)
 
 #### LMS Entities (P3)
 
@@ -352,10 +441,12 @@ RateMyTeacher/
 
 #### AI & Settings Entities
 
-- AISummary (TeacherId, ClassId, LessonNotes, Summary, GeneratedAt)
-- AIUsageLog (UserId, ClassId, Query, Response, Mode [Explain/Guide/ShowAnswer], Timestamp)
+- AISummary (TeacherId, ClassId, LessonNotes, Summary, GeneratedAt, ExportUrl)
+- AIUsageLog (UserId, ClassId, Query, Response, Mode [Explain/Guide/ShowAnswer], Timestamp, ViewedAt)
+- AIControlSetting (ScopeType, ScopeId, IsEnabled)
 - SentimentAnalysis (RatingId, Sentiment [Positive/Neutral/Negative], Confidence, AnalyzedAt)
 - SystemSetting (Key, Value, Description, ModifiedAt)
+- ReportSnapshot (RangeStart, RangeEnd, Payload, GeneratedAt)
 
 ### API Contracts (if applicable)
 
@@ -365,11 +456,16 @@ For this MVC application, most interactions are server-rendered, but we may expo
 
 **Potential JSON Endpoints**:
 
-- `POST /api/ratings` - Submit rating (AJAX)
-- `GET /api/leaderboard/{semesterId}` - Get rankings JSON
+- `POST /api/ratings` - Submit rating (AJAX, enrollment enforcement)
+- `GET /api/leaderboard/{semesterId}` - Get rankings JSON + checksum metadata
+- `POST /api/leaderboard/{semesterId}/award` - Trigger bonus payouts (admin only)
 - `POST /api/ai/summary` - Generate AI summary (AJAX)
 - `POST /api/ai/companion` - AI study companion chat (AJAX)
+- `POST /api/ai/control` - Toggle AI availability per scope (global/department/class)
+- `GET /api/ai/logs` - Fetch AI usage logs filtered by scope with permissions
 - `GET /api/permissions/check` - Permission evaluation (AJAX)
+- `POST /api/permissions/templates` - CRUD role templates
+- `POST /api/attendance/substitution` - Assign substitutes + push notifications
 
 ### Quickstart Guide
 
@@ -382,9 +478,11 @@ For this MVC application, most interactions are server-rendered, but we may expo
 3. Create `.env` file with Gemini API key
 4. Run migrations: `dotnet ef database update`
 5. Seed default data (Admin user, default roles)
-6. Run application: `dotnet run`
-7. Access at `https://localhost:5001`
-8. Default credentials (Admin/admin@school.com)
+6. Run migrations: `dotnet ef database update`
+7. Run tests: `dotnet test`
+8. Start development server: `dotnet watch run`
+9. Access at `https://localhost:5001`
+10. Default credentials (Admin/admin@school.com)
 
 ### Agent Context Update
 

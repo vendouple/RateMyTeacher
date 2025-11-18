@@ -1,123 +1,109 @@
 # RateMyTeacher - Feature Spec
 
-Priority order: P1 highest
+Priority order: P1 highest. This document must remain in lock-step with `SPECIFICATION.md`, `IMPLEMENTATION_PLAN.md`, and `PRINCIPLES.md`.
 
 ## Clarifications
 
 ### Session 2025-10-23
 
-- Q: The spec uses both "term" and "semester" - are these the same concept or different? → A: Same thing - use "semester" consistently. Two semesters per year (6 months each).
-- Q: What is the minimum vote threshold for teachers to qualify for rankings? → A: Minimum 10 ratings required to appear in rankings.
-- Q: What authentication method should be used and how are user roles managed? → A: Email/password authentication with role-based access (Student/Teacher/Admin).
-- Q: How should Gemini API failures be handled (rate limits, network issues, invalid API key)? → A: Show user-friendly error message and allow retry.
-- Q: How should attendance be tracked for teachers and students? → A: Teacher attendance: Teachers mark themselves absent with reason for admin/headmaster approval (not visible to students until substitute arrives). Student attendance: Tracked per day (present for whole day unless teacher updates mid-day status to sick/out-of-class/competition). Students and teachers can view attendance records.
-- Q: What permission/role system should be implemented? → A: Hierarchical system with default templates (Admin, Teacher, Student). Optional Department feature (can be disabled). Structure: Global Permissions → Optional Departments → Classes → Role Templates. Admins can create custom templates per department. Global Admins have full access. Teachers with "Create Class" permission become Class Admins. Class Admins can assign custom or template-based permissions to other teachers.
-- Q: How should AI companion control work at different levels? → A: Three-level control: 1) Global Admin can disable AI completely for everyone system-wide, 2) Admin can disable AI per specific class, 3) Teacher can disable AI for their own class only. When disabled for a class, AI features are completely unavailable for that class context (students cannot use AI for that class's assignments, questions, or content), but students can still use AI for other classes where it's enabled.
-- Q: What level of granularity should permission templates support? → A: Discord-style hierarchical permissions with expandable categories. Top-level categories (e.g., "Grades Management") can be quickly enabled/disabled, but can also be expanded to show granular sub-permissions (View, Edit, Delete). Admins can keep it simple (enable whole category) or customize deeply (select specific sub-permissions). Permission categories include: Grades, Attendance, Assignments, AI Companion, Class Settings, Students, Analytics, etc.
+- "Term" and "semester" refer to the same 6‑month period; use "semester" everywhere.
+- Teachers require at least 10 ratings to appear in rankings unless admins raise the threshold via settings.
+- Email/password authentication with role-based access (Student/Teacher/Admin). Anonymous access is disallowed.
+- Gemini API failures must show user-friendly retries. Never leak stack traces.
+- Attendance: Teachers self-report absences for admin approval, while student attendance defaults to present unless updated mid-day (sick/out-of-class/competition). Students and teachers can read their own records.
+- Permission system: Discord-style hierarchy (Global → Department → Class) with default Admin/Teacher/Student templates. Teachers with "Create Class" become Class Admins and can delegate within their classes.
+- AI control: Three-level disable switches (Global Admin, Class Admin, Teacher). If disabled for a class, every AI entrypoint (summaries, companion) is hidden for that class context but available elsewhere.
+- Permission categories include Grades, Attendance, Assignments, AI Companion, Class Settings, Students, Analytics, Resources, and future LMS items.
+
+### Session 2025-02-14
+
+- Attendance filters must support date range + status filters and display a "No attendance record" card when empty.
+- AI usage logs must track whether the student viewed the response, store a timestamp, and scope visibility (Admin: all, Teacher: their classes, Student: personal).
+- Bonus tier inputs must validate non-overlapping ranges and ensure `startRank ≤ endRank`.
+- Lesson summaries must ship exactly four sections—**Main Topics**, **Key Concepts**, **Important Takeaways**, **Study Tips**—each as bullets, capped at 300 words before the Gemini call.
+- Teacher-submitted absences are hidden from students/parents until a substitute is assigned, but admins/headmasters can review immediately.
+- Schedule automation requires reminders 15 minutes before class and conflict detection when assigning substitutes.
+
+## Non-Functional Requirements
+
+- **Performance**: MVC actions must render within 200 ms p95; permission checks <100 ms. Gemini calls must time out within 30 seconds including retries.
+- **Security & Audit**: Enforce authentication on every endpoint, multi-role authorization, and audit trails for ratings, attendance edits, AI usage, bonus payouts, permission updates, and grade changes.
+- **Accessibility & Neuromorphic Design**: Implement the design language in `PRINCIPLES.md` with dark/light parity, ARIA labels, keyboard focus states, and prefers-reduced-motion handling. The layout must not show the stock ASP.NET template.
+- **Internationalization**: Use ASP.NET Core localization with resources per controller/view, supporting `en-US`, `id-ID`, `zh-CN` initially and persisting language preference in cookies.
+- **AI Transparency**: Always show AI mode indicators (Explain/Guide/Show Answer), log AI usage for 90 days, and block homework-answer requests.
+- **Notifications & Scheduling**: Provide reminders 15 minutes prior to class, parent notifications for absences, and substitution alerts.
+- **Data Export**: Support PDF/Word exports for lesson summaries, CSV/Excel for attendance/grades, and JSON snapshot endpoints for leaderboards with checksums.
+
+## Edge Cases & Scenarios
+
+- Duplicate ratings or missing enrollments must block submission and hide the CTA, surfacing actionable errors.
+- Attendance gaps show a "No attendance record" tile instead of blank space.
+- Substitution conflicts warn admins and require explicit confirmation.
+- Bonus ties split payouts per tier definition and store the calculation checksum for replay.
+- AI failures prompt users to trim content or retry, preserving drafts locally.
+- Theme preferences fall back to system defaults if corrupt.
 
 ## Authentication & Authorization
 
-- Email/password authentication required for all users
-- Three user roles with distinct permissions:
-  - **Student**: Can view teachers, submit ratings (once per teacher per semester), view own rating history
-  - **Teacher**: Can view own ratings/comments, mark attendance, view schedule, request AI summaries
-  - **Admin**: Can view all data, access leaderboards, calculate bonuses, view sentiment analysis
-- Anonymous access not permitted
-- Users must be logged in to access any feature
+- Email/password auth with multi-role assignments per the constitution.
+- Roles: Student, Teacher, Admin, plus custom templates.
+- All pages require login; global admins cannot be removed.
+- RBAC must respect scope ordering (Global → Department → Class) with overrides.
 
-## US1 (P1) - Teacher listing and ratings
+## US1 (P1) – Teacher listing and ratings
 
-- As a student, I can view a list of teachers and rate a teacher 1-5 stars once per semester.
-- Acceptance:
-  - Student can submit a rating with optional comment
-  - Average rating is calculated
-  - One rating per student per teacher per semester enforced
-  - Semester definition: 6-month periods, 2 per academic year
+- Students can browse teachers, rate them 1‑5 stars (with comments) once per semester.
+- Acceptance: enforce enrollment-based eligibility, unique `(Student, Teacher, Semester)` constraint, minimum rating threshold enforcement, and neuromorphic cards for teacher listings with localization-ready copy.
 
-## US2 (P1) - Leaderboard & bonus calculation
+## US2 (P1) – Leaderboard & bonus calculation
 
-- As admin, I can view teacher rankings per semester and distribute bonuses (1st $10, 2nd $5).
-- As admin, I can configure bonus amounts and ranking positions dynamically without restarting the app.
-- Acceptance:
-  - Rankings computed correctly with minimum 10 ratings threshold per teacher
-  - Bonus configuration stored in database settings table (not environment variables)
-  - Admin can add/edit/remove bonus tiers (e.g., 1st place: $10, 2nd: $5, or extend to 10th-1st with custom amounts)
-  - Support both range-based bonuses (e.g., 5th-10th place: $2) and single position bonuses (e.g., 1st place: $10)
-  - Bonus calculation follows admin-configured rules
-  - Minimum rating threshold also configurable by admin
-  - Teachers with fewer than configured minimum ratings are excluded from rankings
+- Admins view rankings per semester and distribute bonuses configurable at runtime (position and range tiers, currency, split rules).
+- Acceptance: rankings honor minimum vote thresholds, store snapshot checksums, bonus config lives in database settings (not env vars), CRUD UI exists, range tiers and single tiers coexist, payouts follow admin rules, and audit entries capture who awarded bonuses.
 
-## US3 (P2) - Lesson summary generation (AI)
+## US3 (P2) – Lesson summary generation (AI)
 
-- As a teacher, I can request an AI-generated lesson summary from lesson notes.
-- Acceptance:
-  - AI returns a structured summary under 300 words
-  - Uses Gemini model via API key in .env
-  - On API failure: Display user-friendly error message with retry option
-  - Error messages do not expose technical details to users
+- Teachers request AI summaries from lesson notes.
+- Acceptance: enforce four-section order with pre-validation under 300 words, allow PDF/Word export and archival, display friendly retries, respect AI controls, and log each request.
 
-## US4 (P2) - Attendance & basic schedule display
+## US4 (P2) – Attendance & schedule experience
 
-- As a teacher, I can mark my own attendance (absent with reason) for admin/headmaster approval.
-- As a teacher, I can mark student attendance per day and update mid-day status if needed.
-- As a teacher, I can see my schedule for the day.
-- As a student, I can view my attendance record.
-- Acceptance:
-  - Teacher absence: Submit absence with reason, requires admin approval, not visible to students until substitute assigned
-  - Student attendance: Default is present for whole day
-  - Teachers can update student status mid-day: sick, out-of-class (competition/event), etc.
-  - Schedule displays current and next class
-  - Both students and teachers can view their own attendance history
+- Teachers mark their own absences, record student attendance, and see schedules. Students view their attendance.
+- Acceptance: admin-approved teacher absence workflow with substitutions, parent notifications upon student absence, mid-day status updates, date/status filters, "No record" hints, conflict detection, and neuromorphic schedule cards showing current/next class with time-to-start countdowns.
 
-## US5 (P3) - Feedback sentiment analysis
+## US5 (P3) – Feedback sentiment analysis
 
-- As admin, I can see sentiment analysis of student comments for a teacher.
-- Acceptance:
-  - Sentiment labeled Positive/Neutral/Negative
-  - Insights stored
+- Admins review sentiment trends across ratings/comments.
+- Acceptance: sentiment labeled Positive/Neutral/Negative, actionable insights persisted, Chart.js dashboards with filters/export, and hooks into teacher improvement recommendations.
 
-## US6 (P3) - Student Dashboard & Learning Management
+## US6 (P3) – Student dashboard & LMS
 
-- As a student, I can access a comprehensive dashboard to manage my academic activities.
-- Acceptance:
-  - View upcoming homework/assignments with due dates
-  - Upload assignment files (universal system replacing Google Classroom)
-  - View grades, personal stats, and class averages per subject
-  - See teacher notes for next class (e.g., "Read Module B pages 25-41")
-  - Track reading assignments with completion status and comprehension checks
-  - Access AI study companion that guides learning (shows answers or provides step-by-step guidance, never solves directly)
-  - View calendar with all due dates and upcoming events
-    - Upload and share notes with other students (gamified)
-  - View scheduled extra classes/meetings (Google Meet, Zoom links)
-  - See what's next, urgent assignments, and required pre-class reading
-  - AI can explain concepts but won't solve homework problems directly
-  - System tracks if students have completed and understood required readings
+- Unified dashboard replacing fragmented tools.
+- Acceptance: assignments with uploads, gradebook view, teacher notes, reading assignment tracking with comprehension checks, AI companion (explain/guide), calendar, gamified note sharing, extra classes (Zoom/Meet links), urgency indicators, recognition badges, and AI-generated nudges summarizing weekly progress.
 
-## US7 (P2) - Advanced Permission & Role Management System
+## US7 (P2) – Advanced permission & role management
 
-- As a Global Admin, I can create and manage hierarchical permission system with granular control.
-- As a Global Admin, I can enable/disable optional Department feature system-wide.
-- As a Global Admin or Department Admin, I can create custom role templates with Discord-style permissions.
-- As a Class Admin (teacher with create-class permission), I can assign roles and permissions to other teachers for my classes.
-- Acceptance:
-  - **Default Roles**: Admin, Teacher, Student templates exist by default
-  - **Optional Departments**: Can be enabled/disabled globally (if disabled, structure is Global → Classes)
-  - **Hierarchy** (when departments enabled): Global Permissions → Departments → Classes → Role Templates
-  - **Global Admin**: Full system access, cannot be removed from any class/department, can manage all settings
-  - **Class Creator**: Teacher with "Create Class" permission automatically becomes Class Admin for their created classes
-  - **Permission Granularity**: Discord-style expandable categories
-    - Top-level categories can be toggled as a whole (e.g., "Grades Management" → all grades permissions)
-    - Categories can be expanded to show sub-permissions (View, Edit, Delete) for fine-grained control
-    - Permission Categories: Grades (View/Edit/Delete), Attendance (View/Mark/Edit), Assignments (View/Create/Edit/Delete/Grade), AI Companion (Enable/Disable/Configure), Class Settings (Edit/Manage), Students (View/Add/Remove/Manage), Analytics (View/Export), Resources (View/Upload/Delete)
-  - **Role Templates**: Admins can create reusable templates (e.g., "Chemistry Viewer", "Physics Editor")
-  - **Template Assignment**: Templates can be department-specific or global
-  - **Class-Level Control**: Class Admins can assign templates or custom permissions to teachers for their specific class
-  - **AI Companion Control**: Three levels (Global disable, Per-class disable by admin, Per-class disable by teacher)
-  - **Permission Override**: More specific permissions override broader ones (Class-level > Department-level > Global-level)
-  - **Permission UI**: Collapsible/expandable interface for simple or detailed permission management
+- Discord-style permission system with multi-role assignments.
+- Acceptance: default role templates, optional departments, rank-based hierarchy, expandable categories/sub-permissions, template CRUD, class-level overrides, AI control toggles, audit logging for every change, localization-ready permission UI, and analytics on role usage.
 
-Optional docs: data-model.md, contracts/
+## US8 (P2) – Lesson & schedule automation
 
-```
+- Teachers see timetable with reminders; admins manage substitutions and detect conflicts.
+- Acceptance: real-time "Now/Next" display, 15-minute reminders (email/push), Google/Outlook calendar sync, substitution workflow that reassigns schedules plus notifications, and conflict resolution tooling.
 
-```
+## US9 (P3) – Teaching log & feedback
+
+- Teachers log topics/materials, attach files, and optionally dictate voice notes; students submit quick feedback.
+- Acceptance: searchable logs with tagging, attachment storage, voice-to-text with multi-language support, anonymous feedback with moderation, trend reports comparing curriculum plans vs. actual coverage, and immediate teacher notifications for critical feedback.
+
+## US10 (P3) – AI summary & weekly reports
+
+- Admins/teachers generate weekly/monthly AI-assisted reports summarizing performance.
+- Acceptance: scheduled job aggregates metrics, Gemini produces insights (Performance Summary, Key Achievements, Areas for Improvement, Engagement Analysis, Recommendations), outputs PDF/Excel, emails stakeholders, and archives reports with rerun capability.
+
+## Personas
+
+- **Student**: Consumes dashboards, submits ratings/feedback, uploads assignments, interacts with AI companion, views attendance.
+- **Teacher**: Manages classes, attendance, lesson notes, AI summaries, responds to feedback, and views badges/reports.
+- **Admin/Department Head**: Oversees leaderboards, permission system, AI controls, attendance workflows, reports, and global settings.
+
+Optional docs: `data-model.md`, `contracts/`

@@ -9,8 +9,9 @@ public class AIUsageLog
     public int? ClassId { get; set; }
     public string Query { get; set; } = string.Empty;
     public string Response { get; set; } = string.Empty;
-    public string Mode { get; set; } = string.Empty;
+    public AiInteractionMode Mode { get; set; } = AiInteractionMode.Explain;
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public DateTime? ViewedAt { get; set; }
 
     public User User { get; set; } = null!;
 }

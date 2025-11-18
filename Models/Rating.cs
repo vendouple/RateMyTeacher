@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace RateMyTeacher.Models;
 
 public class Rating
@@ -6,8 +8,13 @@ public class Rating
     public int StudentId { get; set; }
     public int TeacherId { get; set; }
     public int SemesterId { get; set; }
+
+    [Range(1, 5)]
     public int Stars { get; set; }
+
+    [MaxLength(500)]
     public string? Comment { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 

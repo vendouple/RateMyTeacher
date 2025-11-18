@@ -1,0 +1,236 @@
+@model AiControlsPageViewModel
+@using System.Linq
+@using RateMyTeacher.Models.Enums
+@{
+    ViewData["Title"] = "AI Governance";
+}
+
+<h1 class="mb-4">AI Governance</h1>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert alert-info" role="alert">@statusMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <section class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Global AI Controls</h2>
+                <form asp-action="UpdateGlobal" method="post" class="mt-3">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="GlobalSettings.IsGloballyEnabled" class="form-check-input" />
+                        <label asp-for="GlobalSettings.IsGloballyEnabled" class="form-check-label"></label>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="GlobalSettings.GlobalMode" class="form-label"></label>
+                        <select asp-for="GlobalSettings.GlobalMode" class="form-select" asp-items="Html.GetEnumSelectList<AiInteractionMode>()"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="GlobalSettings.DepartmentMode" class="form-label"></label>
+                        <select asp-for="GlobalSettings.DepartmentMode" class="form-select" asp-items="Html.GetEnumSelectList<AiInteractionMode>()"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="GlobalSettings.ClassMode" class="form-label"></label>
+                        <select asp-for="GlobalSettings.ClassMode" class="form-select" asp-items="Html.GetEnumSelectList<AiInteractionMode>()"></select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save global settings</button>
+                </form>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-6">
+        <section class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Add / Update Scoped Override</h2>
+                <form asp-action="UpsertScope" method="post" class="mt-3">
+                    <input asp-for="ScopeForm.Id" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="mb-3">
+                        <label asp-for="ScopeForm.Scope" class="form-label"></label>
+                        <select asp-for="ScopeForm.Scope" class="form-select" asp-items="Html.GetEnumSelectList<AiControlScope>()"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ScopeForm.ScopeId" class="form-label"></label>
+                        <input asp-for="ScopeForm.ScopeId" class="form-control" type="number" min="1" placeholder="e.g., DepartmentId or ClassId" />
+                        <span asp-validation-for="ScopeForm.ScopeId" class="text-danger"></span>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="ScopeForm.IsEnabled" class="form-check-input" />
+                        <label asp-for="ScopeForm.IsEnabled" class="form-check-label"></label>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ScopeForm.Mode" class="form-label"></label>
+                        <select asp-for="ScopeForm.Mode" class="form-select" asp-items="Html.GetEnumSelectList<AiInteractionMode>()"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ScopeForm.Notes" class="form-label"></label>
+                        <textarea asp-for="ScopeForm.Notes" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">Save scope override</button>
+                        <a asp-action="AiControls" class="btn btn-outline-secondary">Reset form</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+<section class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5">Existing Scoped Overrides</h2>
+        <div class="table-responsive mt-3">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Scope</th>
+                        <th>Scope Id</th>
+                        <th>Status</th>
+                        <th>Mode</th>
+                        <th>Notes</th>
+                        <th>Last updated</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (!Model.ScopeSettings.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No overrides configured.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var scope in Model.ScopeSettings)
+                    {
+                        <tr>
+                            <td>@scope.Scope</td>
+                            <td>@(scope.ScopeId?.ToString() ?? "-")</td>
+                            <td>
+                                <span class="badge @(scope.IsEnabled ? "bg-success" : "bg-secondary")">
+                                    @(scope.IsEnabled ? "Enabled" : "Disabled")
+                                </span>
+                            </td>
+                            <td>@scope.Mode</td>
+                            <td>@(string.IsNullOrWhiteSpace(scope.Notes) ? "-" : scope.Notes)</td>
+                            <td>
+                                <div class="small text-muted">@scope.ModifiedAt.ToLocalTime().ToString("g")</div>
+                                <div class="small">@scope.ModifiedBy</div>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a asp-action="AiControls" asp-route-scopeEntryId="@scope.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <form asp-action="DeleteScope" method="post" class="d-inline">
+                                        <input type="hidden" name="id" value="@scope.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" @(scope.Scope == AiControlScope.Global ? "disabled" : null)>Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="card shadow-sm mt-4">
+    <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <h2 class="h5 mb-0">Recent AI Usage Logs</h2>
+            <form asp-action="AiControls" method="get" class="row g-2">
+                <div class="col-auto">
+                    <input asp-for="Filter.UserId" class="form-control form-control-sm" placeholder="User Id" />
+                </div>
+                <div class="col-auto">
+                    <input asp-for="Filter.ClassId" class="form-control form-control-sm" placeholder="Class Id" />
+                </div>
+                <div class="col-auto">
+                    <select asp-for="Filter.Mode" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<AiInteractionMode>()">
+                        <option value="">All modes</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <input asp-for="Filter.From" class="form-control form-control-sm" type="date" />
+                </div>
+                <div class="col-auto">
+                    <input asp-for="Filter.To" class="form-control form-control-sm" type="date" />
+                </div>
+                <div class="col-auto">
+                    <input asp-for="Filter.Take" class="form-control form-control-sm" type="number" min="10" max="200" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Class Id</th>
+                        <th>Mode</th>
+                        <th>Prompt</th>
+                        <th>Response</th>
+                        <th>Viewed</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (!Model.UsageLogs.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No AI usage recorded for the selected range.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var log in Model.UsageLogs)
+                    {
+                        <tr>
+                            <td>@log.Timestamp.ToLocalTime().ToString("g")</td>
+                            <td>
+                                <div>@log.UserName</div>
+                                <div class="small text-muted">@log.UserRole</div>
+                            </td>
+                            <td>@(log.ClassId?.ToString() ?? "-")</td>
+                            <td>@log.Mode</td>
+                            <td class="small"><pre class="mb-0">@log.Query</pre></td>
+                            <td class="small"><pre class="mb-0">@log.Response</pre></td>
+                            <td>
+                                @if (log.ViewedAt is DateTime viewed)
+                                {
+                                    <span class="badge bg-success">@viewed.ToLocalTime().ToString("g")</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Not viewed</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                @if (log.ViewedAt is null)
+                                {
+                                    <form asp-action="MarkLogViewed" method="post">
+                                        <input type="hidden" name="id" value="@log.Id" />
+                                        <button class="btn btn-sm btn-outline-secondary" type="submit">Mark viewed</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,154 @@
+@model LeaderboardPageViewModel
+@{
+    ViewData["Title"] = "Leaderboard & Bonuses";
+}
+
+<section class="page-header">
+    <h1 class="display-6 fw-semibold">Leaderboard & Bonuses</h1>
+    <p class="text-muted mb-0">Review semester rankings, ensure the minimum ratings threshold is met, and distribute configured bonuses.</p>
+</section>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert alert-info">@Model.StatusMessage</div>
+}
+
+<div class="card-neumorphic mb-4">
+    <form method="get" class="row gy-2 gx-3 align-items-end">
+        <div class="col-sm-6 col-md-4">
+            <label for="semesterId" class="form-label">Semester</label>
+            <select class="form-select" name="semesterId" id="semesterId">
+                @foreach (var semester in Model.Semesters)
+                {
+                    <option value="@semester.Id" selected="@(semester.Id == Model.SelectedSemesterId)">
+                        @(semester.Name) @(semester.IsCurrent ? "(current)" : string.Empty)
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-6 col-md-4">
+            <label class="form-label">Minimum ratings required</label>
+            <input type="text" class="form-control" value="@Model.Settings.MinimumRatingsThreshold" readonly />
+        </div>
+        <div class="col-md-4 text-sm-end">
+            <button type="submit" class="btn btn-primary">Refresh leaderboard</button>
+        </div>
+    </form>
+</div>
+
+<div class="card-neumorphic mb-4">
+    <h2 class="h5">Bonus tiers (@Model.Settings.CurrencyCode)</h2>
+    @if (!Model.Settings.Tiers.Any())
+    {
+        <p class="text-muted mb-0">No tiers are configured. Configure at least one tier in the database or seed defaults.</p>
+    }
+    else
+    {
+        <ul class="mb-0">
+            @foreach (var tier in Model.Settings.Tiers)
+            {
+                string label;
+                if (tier.Position.HasValue)
+                {
+                    label = $"Rank {tier.Position.Value}";
+                }
+                else if (tier.RangeStart.HasValue && tier.RangeEnd.HasValue)
+                {
+                    label = tier.RangeStart.Value == tier.RangeEnd.Value
+                        ? $"Rank {tier.RangeStart.Value}"
+                        : $"Ranks {tier.RangeStart.Value}-{tier.RangeEnd.Value}";
+                }
+                else
+                {
+                    label = "Custom tier";
+                }
+
+                <li><strong>@label:</strong> @tier.Amount.ToString("C", System.Globalization.CultureInfo.InvariantCulture)</li>
+            }
+        </ul>
+    }
+</div>
+
+@if (!Model.HasQualifiedTeachers)
+{
+    <div class="alert alert-warning">No teachers met the minimum ratings threshold for this semester.</div>
+}
+else
+{
+    var payoutLookup = Model.Payouts.ToDictionary(p => p.Entry.TeacherId);
+    <div class="card-neumorphic mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h2 class="h5 mb-0">Qualifying teachers (@Model.Payouts.Count payouts ready)</h2>
+            @if (Model.Payouts.Any())
+            {
+                <form asp-action="AwardBonuses" method="post" class="d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SemesterId" value="@Model.Leaderboard.Semester.Id" />
+                    <button type="submit" class="btn btn-success">Award bonuses</button>
+                </form>
+            }
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Rank</th>
+                        <th scope="col">Teacher</th>
+                        <th scope="col">Average</th>
+                        <th scope="col">Ratings</th>
+                        <th scope="col">Bonus</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model.Leaderboard.Entries)
+                    {
+                        payoutLookup.TryGetValue(entry.TeacherId, out var payout);
+                        <tr>
+                            <td>
+                                <span class="badge bg-primary">#@entry.Rank</span>
+                                @if (entry.IsTie)
+                                {
+                                    <small class="text-muted d-block">tie</small>
+                                }
+                            </td>
+                            <td>
+                                <strong>@entry.TeacherName</strong>
+                                <div class="text-muted small">@(!string.IsNullOrWhiteSpace(entry.Department) ? entry.Department : "Department TBD")</div>
+                            </td>
+                            <td>@entry.AverageRating.ToString("0.00")</td>
+                            <td>@entry.TotalRatings</td>
+                            <td>
+                                @if (payout is null)
+                                {
+                                    <span class="text-muted">–</span>
+                                }
+                                else
+                                {
+                                    <div>
+                                        @payout.AwardedAmount.ToString("C", System.Globalization.CultureInfo.InvariantCulture)
+                                        @if (payout.SplitAcrossTies)
+                                        {
+                                            <small class="text-muted">(split from @payout.BaseAmount.ToString("C", System.Globalization.CultureInfo.InvariantCulture))</small>
+                                        }
+                                    </div>
+                                    <small class="text-muted">@payout.TierLabel</small>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Styles {
+    <style>
+        .card-neumorphic {
+            border-radius: 18px;
+            background: var(--bs-body-bg);
+            box-shadow: -12px -12px 24px rgba(255, 255, 255, 0.4), 12px 12px 24px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+        }
+    </style>
+}
