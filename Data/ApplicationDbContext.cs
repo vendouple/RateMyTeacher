@@ -22,6 +22,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SentimentAnalysis> SentimentAnalyses => Set<SentimentAnalysis>();
     public DbSet<SystemSetting> SystemSettings => Set<SystemSetting>();
     public DbSet<AIControlSetting> AIControlSettings => Set<AIControlSetting>();
+    public DbSet<LessonPlan> LessonPlans => Set<LessonPlan>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -171,6 +172,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .WithMany()
                 .HasForeignKey(b => b.AwardedById)
                 .OnDelete(DeleteBehavior.SetNull);
+            entity.HasQueryFilter(b => !b.Teacher.User.IsDeleted);
         });
 
         modelBuilder.Entity<AISummary>(entity =>
@@ -181,6 +183,20 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(a => a.TeacherId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasQueryFilter(a => !a.Teacher.User.IsDeleted);
+        });
+
+        modelBuilder.Entity<LessonPlan>(entity =>
+        {
+            entity.Property(lp => lp.Subject).HasMaxLength(100);
+            entity.Property(lp => lp.GradeLevel).HasMaxLength(50);
+            entity.Property(lp => lp.TopicFocus).HasMaxLength(500);
+            entity.Property(lp => lp.StudentNeeds).HasMaxLength(500);
+            entity.HasIndex(lp => lp.TeacherId);
+            entity.HasOne(lp => lp.Teacher)
+                .WithMany(t => t.LessonPlans)
+                .HasForeignKey(lp => lp.TeacherId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasQueryFilter(lp => !lp.Teacher.User.IsDeleted);
         });
 
         modelBuilder.Entity<AIUsageLog>(entity =>

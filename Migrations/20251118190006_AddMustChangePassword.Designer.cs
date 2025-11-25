@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RateMyTeacher.Data;
 
@@ -10,9 +11,11 @@ using RateMyTeacher.Data;
 namespace RateMyTeacher.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251118190006_AddMustChangePassword")]
+    partial class AddMustChangePassword
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.0");
@@ -244,55 +247,6 @@ namespace RateMyTeacher.Migrations
                         {
                             t.HasCheckConstraint("CK_BonusTier_PositionOrRange", "(Position IS NOT NULL) OR (RangeStart IS NOT NULL AND RangeEnd IS NOT NULL)");
                         });
-                });
-
-            modelBuilder.Entity("RateMyTeacher.Models.LessonPlan", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("DurationMinutes")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("GradeLevel")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ResourcesJson")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("SectionsJson")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("StudentNeeds")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("TeacherId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("TopicFocus")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TeacherId");
-
-                    b.ToTable("LessonPlans");
                 });
 
             modelBuilder.Entity("RateMyTeacher.Models.Rating", b =>
@@ -719,17 +673,6 @@ namespace RateMyTeacher.Migrations
                     b.Navigation("Config");
                 });
 
-            modelBuilder.Entity("RateMyTeacher.Models.LessonPlan", b =>
-                {
-                    b.HasOne("RateMyTeacher.Models.Teacher", "Teacher")
-                        .WithMany("LessonPlans")
-                        .HasForeignKey("TeacherId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Teacher");
-                });
-
             modelBuilder.Entity("RateMyTeacher.Models.Rating", b =>
                 {
                     b.HasOne("RateMyTeacher.Models.Semester", "Semester")
@@ -843,8 +786,6 @@ namespace RateMyTeacher.Migrations
 
             modelBuilder.Entity("RateMyTeacher.Models.Teacher", b =>
                 {
-                    b.Navigation("LessonPlans");
-
                     b.Navigation("Rankings");
 
                     b.Navigation("Ratings");

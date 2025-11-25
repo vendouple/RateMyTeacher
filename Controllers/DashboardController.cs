@@ -186,24 +186,26 @@ public class DashboardController : Controller
         var aiSessionsTask = _dbContext.AIUsageLogs.CountAsync(l => l.UserId == userId, cancellationToken);
         await Task.WhenAll(ratingsCountTask, teacherCountTask, aiSessionsTask);
 
-        var suggestions = await _dbContext.Ratings
+        var suggestions = await _dbContext.Teachers
             .AsNoTracking()
-            .GroupBy(r => new
+            .Where(t => t.Ratings.Any())
+            .Select(t => new
             {
-                r.TeacherId,
-                r.Teacher.User.FirstName,
-                r.Teacher.User.LastName,
-                r.Teacher.Department
+                t.Id,
+                FullName = t.User.FirstName + " " + t.User.LastName,
+                AverageRating = t.Ratings.Average(r => (double)r.Stars),
+                RatingCount = t.Ratings.Count(),
+                t.Department
             })
-            .Select(g => new StudentSuggestedTeacherViewModel(
-                g.Key.TeacherId,
-                g.Key.FirstName + " " + g.Key.LastName,
-                g.Average(r => (double)r.Stars),
-                g.Count(),
-                g.Key.Department))
-            .OrderByDescending(g => g.AverageRating)
-            .ThenByDescending(g => g.RatingCount)
+            .OrderByDescending(x => x.AverageRating)
+            .ThenByDescending(x => x.RatingCount)
             .Take(4)
+            .Select(x => new StudentSuggestedTeacherViewModel(
+                x.Id,
+                x.FullName,
+                x.AverageRating,
+                x.RatingCount,
+                x.Department))
             .ToListAsync(cancellationToken);
 
         var viewModel = new StudentDashboardViewModel

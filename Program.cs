@@ -30,6 +30,8 @@ builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<IRatingService, RatingService>();
 builder.Services.AddScoped<IBonusService, BonusService>();
 builder.Services.AddScoped<IAIUsageService, AIUsageService>();
+builder.Services.AddScoped<ILessonSummaryService, LessonSummaryService>();
+builder.Services.AddScoped<ILessonPlanningService, LessonPlanningService>();
 
 var supportedCultures = new[]
 {

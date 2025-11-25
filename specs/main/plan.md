@@ -8,8 +8,15 @@ RateMyTeacher is a comprehensive educational platform for modern teaching workfl
 
 1. **Lesson & Schedule Management** – timetable automation, substitution workflows, AI lesson planning assistant, structured lesson summaries, and attendance/absence tracking.
 2. **Teaching Log & Feedback** – daily “What I taught” logs, voice-to-text reflections, student post-class feedback, anonymous channels, and AI-generated weekly/monthly reports.
-3. **Performance & Bonus System** – RateMyTeacher ratings, Discord-style permissions, leaderboard-driven bonuses, recognition badges, and teacher improvement recommendations.
+3. **Performance & Bonus System** – RateMyTeacher ratings, streamlined Admin-led user management, leaderboard-driven bonuses, recognition badges, and teacher improvement recommendations.
 4. **Grades & Data Unification** – unified gradebook, cross-term tracking, subject-wide comparisons, and AI alerts for anomalies.
+
+### Direction Update – 2025-11-18
+
+- Roles are restricted to **Admin, Teacher, Student**. All department head, principal, parent/guardian, and sysadmin personas roll into Admin responsibilities with no scoped overrides.
+- AI governance is intentionally simple: one global enable toggle plus Teacher AI Mode (Unrestricted/Guided/Off) and Student AI Mode (Learning/Unrestricted/Off). Scoped overrides and per-class switches were removed.
+- Neuromorphic styling is deferred; keep Bootstrap defaults crisp and accessible.
+- Admin-driven password resets must force a `MustChangePassword` flow before non-admins can continue.
 
 **Release Cadence & Phases** (detailed roadmap below): Phase 1 establishes infrastructure, Phase 2A locks accessibility/localization (complete), Phase 2B introduces AI governance + logging, Phase 3–4 deliver RateMyTeacher MVP, Phase 5A focuses on AI lesson experiences, Phase 5B brings attendance & schedule operations, Phase 6 extends sentiment + anonymous feedback, and Phase 7 unifies grades/insights.
 
@@ -22,7 +29,7 @@ RateMyTeacher is a comprehensive educational platform for modern teaching workfl
 | Phase 1 | P1 | Project setup, EF Core, auth shell | §3.1 RateMyTeacher (infrastructure) |
 | Phase 2 | P1 | Foundational data models + services | §3.1 |
 | Phase 2A ✅ | P1 | Accessibility + localization baseline | Principles, §Lesson intro |
-| Phase 2B | P1 | AI control hierarchy, AI usage logging, safety toggles | §1.3, §3 AI Transparency |
+| Phase 2B | P1 | Global AI toggle + teacher/student modes, AI usage logging, safety toggles | §1.3, §3 AI Transparency |
 | Phase 3 (US1) | P1 | Student ratings + enrollment enforcement | §3.1 RateMyTeacher |
 | Phase 4 (US2) | P1 | Leaderboard, payouts, bonus audit trail | §3.1 RateMyTeacher |
 | Phase 5A (US3) | P2 | AI lesson summary generator + structured outputs | §1.3 Lesson Summary Generator |
@@ -64,7 +71,7 @@ Each user story bundles domain models, services, UI, telemetry, and acceptance t
 - API key stored in `.env` file only (never in version control)
 - Bonus configurations must live in the database with admin CRUD (per spec)
 - HTTPS-only in production
-- Neuromorphic design + localization cannot regress; dark/light parity required at all milestones
+- Neuromorphic styling is deferred; focus on Bootstrap defaults and accessibility basics. Localization commitments remain.
 - Must support phased rollout (P1/P2/P3 features) with feature flags hiding incomplete modules
 
 **Scale/Scope**:
@@ -91,15 +98,12 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 **Status**: ✅ PASS
 
-### II. Discord-Style Multi-Role Permission System
+### II. Linear Role Model (Admin > Teacher > Student)
 
-- ✅ Multiple role assignments per user supported (UserRole join table)
-- ✅ Cumulative permissions (UNION of all role permissions)
-- ✅ Role hierarchy protection (rank system prevents junior roles from modifying senior roles)
-- ✅ Permission categories hierarchical and expandable (PermissionCategory table)
-- ✅ Three scopes: Global → Department (optional) → Class
-- ✅ Class-level permissions override department/global
-- ✅ Global Admins have irrevocable full access
+- ✅ Exactly three roles exist; Admin is the superset that owns every management responsibility.
+- ✅ Users carry a single role assignment kept in the `Users` table (no join table required).
+- ✅ Authorization checks rely on simple `Role` comparisons—no scoped overrides or mixed assignments.
+- ✅ Admin UI for user management must only surface these three roles and provide password reset tooling.
 
 **Status**: ✅ PASS
 
@@ -322,12 +326,12 @@ These stories supplement Phase 2B AI governance tasks and ensure every SPEC se
 
 ### Research Tasks
 
-1. **Discord-Style Permission System Implementation in EF Core**
+1. **Linear Role & Password Reset Enforcement**
 
-   - Research: Many-to-many relationships with payloads (UserRole with scope)
-   - Research: Hierarchical data structures (permission categories)
-   - Research: Performance optimization for permission queries (caching, eager loading)
-   - Output: `research.md` section on permission data model best practices
+   - Research: Best practices for hard-coding three roles with enum + lookup tables
+   - Research: Admin UX for issuing temporary passwords + `MustChangePassword` gates
+   - Research: Auditing role changes without the overhead of permission trees
+   - Output: `research.md` section describing the simplified RBAC + reset workflow
 
 2. **Google Gemini 2.5 Flash Integration**
 

@@ -31,4 +31,5 @@ public class Teacher
     public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
     public ICollection<TeacherRanking> Rankings { get; set; } = new List<TeacherRanking>();
     public ICollection<AISummary> Summaries { get; set; } = new List<AISummary>();
+    public ICollection<LessonPlan> LessonPlans { get; set; } = new List<LessonPlan>();
 }

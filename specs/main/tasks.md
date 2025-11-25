@@ -2,6 +2,8 @@
 
 **Input**: `/specs/main/plan.md`, `/specs/main/spec.md`, `/specs/main/data-model.md`, `/specs/main/research.md`, `/specs/main/contracts/`
 
+**Direction Update (2025-11-18)**: Tasks now assume only three roles (Admin, Teacher, Student), a single global AI toggle with role-based modes, Bootstrap-first UI (neuromorphic deferred), and admin-driven password reset flows with `MustChangePassword` enforcement. Legacy references to department heads, parents, or scoped AI overrides should be interpreted through this simplified lens.
+
 Tests are optional but encouraged for P1 items due to constitution Principle III. Each task references the concrete file(s) it touches so work can be independently assigned.
 
 ## Phase 1: Setup (Shared Infrastructure)
@@ -33,10 +35,10 @@ Tests are optional but encouraged for P1 items due to constitution Principle III
 
 ## Phase 2A: Accessibility & Localization Baseline (Principle VII)
 
-**Purpose**: Ship neuromorphic styling, dark/light parity, and localization scaffolding before user stories.
+**Purpose**: Ship Bootstrap-first theming, dark/light parity, and localization scaffolding before user stories (neuromorphic polish deferred).
 
 - [X] T014 Configure ASP.NET Core localization services, add base resource folders, and wire default cultures in `Program.cs`.
-- [X] T015 Introduce neuromorphic styling in `RateMyTeacher/wwwroot/css/neuromorphic.css`, connect tokens into `_Layout.cshtml`, and ensure both themes render.
+- [X] T015 Introduce accessible Bootstrap theme tokens in `RateMyTeacher/wwwroot/css/site.css` (neuromorphic deferred), connect toggles into `_Layout.cshtml`, and ensure both themes render.
 - [X] T016 Implement theme toggle behavior plus initial icons in `RateMyTeacher/wwwroot/js/theme.js` and verify the toggle loads before first paint.
 
 ---
@@ -45,7 +47,7 @@ Tests are optional but encouraged for P1 items due to constitution Principle III
 
 **Purpose**: Enforce AI transparency, scoped toggles, and auditing before layering additional AI features.
 
-- [X] T017 Add AI control scope configuration (Global/Department/Class) in `RateMyTeacher/Models/SystemSetting.cs` and register supporting tables in `RateMyTeacher/Data/ApplicationDbContext.cs`.
+- [X] T017 Add simplified AI control settings (global toggle + Teacher/Student modes) in `RateMyTeacher/Models/SystemSetting.cs` and register supporting tables in `RateMyTeacher/Data/ApplicationDbContext.cs`.
 - [X] T018 Create `RateMyTeacher/Models/AIControlSetting.cs` plus EF migration to persist per-scope enablement, defaulting to "Explain" mode.
 - [X] T019 Implement AI usage logging pipeline (service + repository) in `RateMyTeacher/Services/AIUsageService.cs` and hook into `GeminiService` to capture prompts, outputs, and viewed flags.
 - [X] T020 Build AI governance admin UI in `RateMyTeacher/Controllers/SettingsController.cs` with Razor view `RateMyTeacher/Views/Settings/AiControls.cshtml` so admins can toggle modes and review recent logs.
@@ -74,7 +76,7 @@ Tests are optional but encouraged for P1 items due to constitution Principle III
 - [X] T025 [P] [US1] Declare teacher retrieval contract in `RateMyTeacher/Services/ITeacherService.cs`.
 - [X] T026 [US1] Implement teacher listing with eager loading + semester filters in `RateMyTeacher/Services/TeacherService.cs`.
 - [X] T027 [US1] Build MVC endpoints (Index, Details, Rate) in `RateMyTeacher/Controllers/TeachersController.cs`.
-- [X] T028 [P] [US1] Create teacher list UI with neuromorphic cards in `RateMyTeacher/Views/Teachers/Index.cshtml`.
+- [X] T028 [P] [US1] Create teacher list UI with clean Bootstrap cards in `RateMyTeacher/Views/Teachers/Index.cshtml`.
 - [X] T029 [P] [US1] Create teacher detail view with rating summary and eligibility messaging in `RateMyTeacher/Views/Teachers/Details.cshtml`.
 - [X] T030 [P] [US1] Implement interactive rating widget and submission logic in `RateMyTeacher/wwwroot/js/rating.js`.
 - [X] T031 [US1] Seed sample teachers, students, enrollments in `RateMyTeacher/Data/Seed/SeedData.cs` and wire execution at startup.

@@ -915,60 +915,35 @@
 
 ## User Roles & Permissions
 
-### 1. Student
+The platform now operates with **only three roles** (Student, Teacher, Admin) to mirror a streamlined Google Classroom-style flow. All legacy references to department heads, principals, parents, or system administrators now fall under the Admin umbrella. Where earlier features mentioned parent visibility or department workflows, assume Admins trigger the same communications or exports on behalf of those stakeholders.
 
-- View own grades and assignments
-- Submit assignments
-- Rate teachers (once per term)
-- View announcements
-- Ask AI questions
-- Provide lesson feedback
-- Track own attendance
+### Student
 
-### 2. Teacher
+- View own grades, assignments, announcements, and attendance
+- Submit assignments and post-lesson feedback
+- Ask AI questions within the configured student AI mode
+- Rate teachers once per term when enrollment allows
 
-- Manage own classes and students
-- Enter grades and attendance
-- Create and distribute assignments
-- Post announcements (to own classes)
-- View own ratings and feedback
-- Access AI teaching assistant
-- Share resources
-- Record lesson logs
+### Teacher
 
-### 3. Department Head
+- Manage assigned classes, rosters, grades, and attendance
+- Create assignments, announcements, lesson logs, and AI-assisted plans
+- Review personal ratings/feedback and download AI lesson summaries
+- Access AI tooling governed by the global Teacher AI mode
 
-- View all teachers in department
-- Access curriculum alignment reports
-- Review teacher performance
-- Manage resource sharing
-- Create department announcements
+### Admin
 
-### 4. Principal/Admin
+- Full-system management including user onboarding/resetting passwords
+- Configure AI governance, bonus tiers, semesters, and global settings
+- Execute tasks previously attributed to department heads, principals, parents, or sysadmins (reports, exports, substitute coordination, guardian notifications)
+- Monitor analytics, anomaly alerts, and infrastructure integrations
 
-- Full system access
-- View all reports and analytics
-- Manage users and permissions
-- Configure bonus rules
-- Review anomaly alerts
-- Export data
-- System settings
+### AI Governance Simplification
 
-### 5. Parent
-
-- View linked student(s) data (read-only)
-- Receive notifications
-- Message teachers
-- View attendance and grades
-- Schedule conferences
-
-### 6. System Administrator
-
-- Technical system management
-- Database administration
-- API integrations
-- Security settings
-- Backup and restore
+- A single global toggle controls whether AI-powered flows are exposed anywhere in the product. When disabled, the UI hides all AI entry points and backend calls are short-circuited.
+- Two role-specific modes remain: **Teacher AI Mode** (`Unrestricted`, `Guided`, `Off`) and **Student AI Mode** (`Learning`, `Unrestricted`, `Off`). Admins can change these from the AI Governance screen and the selection is stored in `SystemSettings` keys `AI.Control.*`.
+- Teacher modes map to Gemini usage policies: `Unrestricted` returns precise answers, `Guided` responds with coaching prompts, and `Off` disables AI for teachers. Student modes follow similar guard rails where `Learning` limits outputs to hints, `Unrestricted` mirrors the teacher experience, and `Off` hides the assistant entirely.
+- Scoped overrides, department-level switches, and custom prompt controls were removed to keep decision-making linear. Audit logs continue to capture every AI query with the resolved mode so compliance reviews remain possible without per-scope settings.
 
 ---
 

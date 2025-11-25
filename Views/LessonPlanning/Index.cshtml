@@ -1,0 +1,164 @@
+@model LessonPlanningPageViewModel
+@{
+    ViewData["Title"] = "Lesson Planning";
+    var statusMessage = ViewData["StatusMessage"] as string ?? TempData["StatusMessage"] as string;
+}
+
+<h1 class="mb-3">Lesson Planning Assistant</h1>
+<p class="text-muted">Describe the upcoming lesson and the assistant will propose an engage-explore-apply-reflect flow along with quick resource ideas. Everything honors the simplified AI toggle + teacher mode configuration.</p>
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="alert alert-success" role="alert">@statusMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Request plan</h2>
+                <form asp-action="Index" method="post" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    @if (Model.TeacherOptions.Any())
+                    {
+                        <div class="mb-3">
+                            <label asp-for="Form.TeacherId" class="form-label"></label>
+                            <select asp-for="Form.TeacherId" class="form-select" asp-items="Model.TeacherOptions.Select(o => new SelectListItem(o.Name, o.Id.ToString()))">
+                                <option value="">Select teacher…</option>
+                            </select>
+                            <span asp-validation-for="Form.TeacherId" class="text-danger"></span>
+                        </div>
+                        if (Model.RequireTeacherSelection)
+                        {
+                            <p class="text-muted small">Pick a teacher to see saved plans.</p>
+                        }
+                    }
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label asp-for="Form.Subject" class="form-label"></label>
+                            <input asp-for="Form.Subject" class="form-control" />
+                            <span asp-validation-for="Form.Subject" class="text-danger"></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="Form.GradeLevel" class="form-label"></label>
+                            <input asp-for="Form.GradeLevel" class="form-control" />
+                            <span asp-validation-for="Form.GradeLevel" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label asp-for="Form.TopicFocus" class="form-label"></label>
+                        <textarea asp-for="Form.TopicFocus" class="form-control" rows="4" placeholder="e.g., Comparing fractions with unlike denominators"></textarea>
+                        <span asp-validation-for="Form.TopicFocus" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Form.StudentNeeds" class="form-label"></label>
+                        <textarea asp-for="Form.StudentNeeds" class="form-control" rows="3" placeholder="Optional context such as accommodations or extension goals."></textarea>
+                        <span asp-validation-for="Form.StudentNeeds" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Form.DurationMinutes" class="form-label"></label>
+                        <input asp-for="Form.DurationMinutes" class="form-control" />
+                        <span asp-validation-for="Form.DurationMinutes" class="text-danger"></span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Generate plan</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Suggested flow</h2>
+                @if (Model.GeneratedPlan is { } plan)
+                {
+                    <p class="text-muted mb-1">Created @plan.CreatedAt.ToLocalTime(): @plan.Subject (@plan.GradeLevel)</p>
+                    @foreach (var planSection in plan.Sections)
+                    {
+                        <h3 class="h6 mt-3">@planSection.Title</h3>
+                        <ul class="mb-1">
+                            @foreach (var step in planSection.Steps)
+                            {
+                                <li>@step</li>
+                            }
+                        </ul>
+                    }
+                    <h3 class="h6 mt-4">Resource ideas</h3>
+                    <ul>
+                        @foreach (var resource in plan.Resources)
+                        {
+                            <li>@resource</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">Fill out the form to receive a working lesson flow.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="card shadow-sm mt-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h2 class="h5 mb-0">Recent plans</h2>
+            <span class="text-muted small">Showing last @Model.History.Count entries</span>
+        </div>
+        @if (!Model.History.Any())
+        {
+            <p class="text-muted mb-0">No saved plans yet.</p>
+        }
+        else
+        {
+            <div class="accordion" id="planHistory">
+                @{ var idx = 0; }
+                @foreach (var entry in Model.History)
+                {
+                    var headingId = $"planHeading_{idx}";
+                    var collapseId = $"planCollapse_{idx}";
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="@headingId">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                                <div class="w-100 d-flex justify-content-between align-items-center">
+                                    <span>@entry.CreatedAt.ToLocalTime().ToString("g") — @entry.Subject (@entry.GradeLevel)</span>
+                                    <span class="text-muted small ms-2">@entry.TopicFocus</span>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="@collapseId" class="accordion-collapse collapse" aria-labelledby="@headingId" data-bs-parent="#planHistory">
+                            <div class="accordion-body">
+                                @foreach (var historySection in entry.Sections)
+                                {
+                                    <h3 class="h6 mt-3">@historySection.Title</h3>
+                                    <ul>
+                                        @foreach (var step in historySection.Steps)
+                                        {
+                                            <li>@step</li>
+                                        }
+                                    </ul>
+                                }
+                                <h4 class="h6 mt-3">Resources</h4>
+                                <ul>
+                                    @foreach (var resource in entry.Resources)
+                                    {
+                                        <li>@resource</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    idx++;
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

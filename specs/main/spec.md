@@ -4,6 +4,14 @@ Priority order: P1 highest. This document must remain in lock-step with `SPECIFI
 
 ## Clarifications
 
+### Session 2025-11-18
+
+- Roles are now limited to **Admin, Teacher, Student**. No custom templates, departments, or parent-facing roles exist. Admin subsumes every management responsibility (including former department head/principal/parent workflows).
+- Authorization is linear: Admin > Teacher > Student. Future requirements referencing department heads or parents should be interpreted as Admin access.
+- AI governance shrank to a single global enable switch plus Teacher AI Mode (Unrestricted/Guided/Off) and Student AI Mode (Learning/Unrestricted/Off). Scoped overrides were removed.
+- Neuromorphic styling is deferred; keep Bootstrap defaults tidy and ensure accessibility basics (contrast, keyboard focus) remain.
+- Password resets are Admin-driven with a `MustChangePassword` enforcement loop after temporary credentials are issued.
+
 ### Session 2025-10-23
 
 - "Term" and "semester" refer to the same 6‑month period; use "semester" everywhere.
@@ -11,8 +19,8 @@ Priority order: P1 highest. This document must remain in lock-step with `SPECIFI
 - Email/password authentication with role-based access (Student/Teacher/Admin). Anonymous access is disallowed.
 - Gemini API failures must show user-friendly retries. Never leak stack traces.
 - Attendance: Teachers self-report absences for admin approval, while student attendance defaults to present unless updated mid-day (sick/out-of-class/competition). Students and teachers can read their own records.
-- Permission system: Discord-style hierarchy (Global → Department → Class) with default Admin/Teacher/Student templates. Teachers with "Create Class" become Class Admins and can delegate within their classes.
-- AI control: Three-level disable switches (Global Admin, Class Admin, Teacher). If disabled for a class, every AI entrypoint (summaries, companion) is hidden for that class context but available elsewhere.
+- Permission system: previously described Discord-style hierarchy is deprecated. The build now enforces only the three fixed roles with Admin as the sole management persona.
+- AI control: replaced with the simplified global toggle + role-based modes described in Session 2025-11-18.
 - Permission categories include Grades, Attendance, Assignments, AI Companion, Class Settings, Students, Analytics, Resources, and future LMS items.
 
 ### Session 2025-02-14
@@ -28,7 +36,7 @@ Priority order: P1 highest. This document must remain in lock-step with `SPECIFI
 
 - **Performance**: MVC actions must render within 200 ms p95; permission checks <100 ms. Gemini calls must time out within 30 seconds including retries.
 - **Security & Audit**: Enforce authentication on every endpoint, multi-role authorization, and audit trails for ratings, attendance edits, AI usage, bonus payouts, permission updates, and grade changes.
-- **Accessibility & Neuromorphic Design**: Implement the design language in `PRINCIPLES.md` with dark/light parity, ARIA labels, keyboard focus states, and prefers-reduced-motion handling. The layout must not show the stock ASP.NET template.
+- **Accessibility & UI Baseline**: Focus on clean Bootstrap layouts with ARIA labels, keyboard focus states, and prefers-reduced-motion handling. Neuromorphic polish is deferred; prioritize clarity over custom theming.
 - **Internationalization**: Use ASP.NET Core localization with resources per controller/view, supporting `en-US`, `id-ID`, `zh-CN` initially and persisting language preference in cookies.
 - **AI Transparency**: Always show AI mode indicators (Explain/Guide/Show Answer), log AI usage for 90 days, and block homework-answer requests.
 - **Notifications & Scheduling**: Provide reminders 15 minutes prior to class, parent notifications for absences, and substitution alerts.
@@ -45,15 +53,15 @@ Priority order: P1 highest. This document must remain in lock-step with `SPECIFI
 
 ## Authentication & Authorization
 
-- Email/password auth with multi-role assignments per the constitution.
-- Roles: Student, Teacher, Admin, plus custom templates.
-- All pages require login; global admins cannot be removed.
-- RBAC must respect scope ordering (Global → Department → Class) with overrides.
+- Email/password auth with exactly one role per user (Admin, Teacher, or Student).
+- Admin is a strict superset role that owns every management action formerly tied to department heads, principals, or parents.
+- All pages require login; Admin accounts cannot be deleted or demoted from within the UI.
+- Authorization checks now compare against these three roles only; no scope or hierarchy overrides remain.
 
 ## US1 (P1) – Teacher listing and ratings
 
 - Students can browse teachers, rate them 1‑5 stars (with comments) once per semester.
-- Acceptance: enforce enrollment-based eligibility, unique `(Student, Teacher, Semester)` constraint, minimum rating threshold enforcement, and neuromorphic cards for teacher listings with localization-ready copy.
+- Acceptance: enforce enrollment-based eligibility, unique `(Student, Teacher, Semester)` constraint, minimum rating threshold enforcement, and clean Bootstrap cards for teacher listings with localization-ready copy.
 
 ## US2 (P1) – Leaderboard & bonus calculation
 
@@ -68,7 +76,7 @@ Priority order: P1 highest. This document must remain in lock-step with `SPECIFI
 ## US4 (P2) – Attendance & schedule experience
 
 - Teachers mark their own absences, record student attendance, and see schedules. Students view their attendance.
-- Acceptance: admin-approved teacher absence workflow with substitutions, parent notifications upon student absence, mid-day status updates, date/status filters, "No record" hints, conflict detection, and neuromorphic schedule cards showing current/next class with time-to-start countdowns.
+- Acceptance: admin-approved teacher absence workflow with substitutions, parent notifications upon student absence, mid-day status updates, date/status filters, "No record" hints, conflict detection, and straightforward Bootstrap schedule cards showing current/next class with time-to-start countdowns.
 
 ## US5 (P3) – Feedback sentiment analysis
 
@@ -80,10 +88,10 @@ Priority order: P1 highest. This document must remain in lock-step with `SPECIFI
 - Unified dashboard replacing fragmented tools.
 - Acceptance: assignments with uploads, gradebook view, teacher notes, reading assignment tracking with comprehension checks, AI companion (explain/guide), calendar, gamified note sharing, extra classes (Zoom/Meet links), urgency indicators, recognition badges, and AI-generated nudges summarizing weekly progress.
 
-## US7 (P2) – Advanced permission & role management
+## US7 (P2) – Simplified user management & password resets
 
-- Discord-style permission system with multi-role assignments.
-- Acceptance: default role templates, optional departments, rank-based hierarchy, expandable categories/sub-permissions, template CRUD, class-level overrides, AI control toggles, audit logging for every change, localization-ready permission UI, and analytics on role usage.
+- Admin-focused workflow to add teachers/students, reset passwords, and enforce the `MustChangePassword` gate before users access the app.
+- Acceptance: only Admin/Teacher/Student roles appear in the UI, role changes audit who made the update, password resets issue temporary credentials + flags, and navigation stays consistent with the simplified hierarchy.
 
 ## US8 (P2) – Lesson & schedule automation
 

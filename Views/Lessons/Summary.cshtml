@@ -1,0 +1,119 @@
+@model LessonSummaryPageViewModel
+@{
+    ViewData["Title"] = "Lesson Summary";
+    var statusMessage = ViewData["StatusMessage"] as string ?? TempData["StatusMessage"] as string;
+}
+
+<h1 class="mb-3">Lesson Summary Generator</h1>
+<p class="text-muted">Capture quick lesson notes and let the assistant return the four required sections (Main Topics, Key Concepts, Important Takeaways, Study Tips). Output is capped at 300 words automatically.</p>
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="alert alert-success" role="alert">@statusMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">New summary</h2>
+                <form asp-action="Summary" method="post" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    @if (Model.TeacherOptions.Any())
+                    {
+                        <div class="mb-3">
+                            <label asp-for="Form.TeacherId" class="form-label"></label>
+                            <select asp-for="Form.TeacherId" class="form-select" asp-items="Model.TeacherOptions.Select(o => new SelectListItem(o.Name, o.Id.ToString()))">
+                                <option value="">Select teacher…</option>
+                            </select>
+                            <span asp-validation-for="Form.TeacherId" class="text-danger"></span>
+                        </div>
+                        if (Model.RequireTeacherSelection)
+                        {
+                            <p class="text-muted small">Choose a teacher to unlock the history panel.</p>
+                        }
+                    }
+                    <div class="mb-3">
+                        <label asp-for="Form.LessonNotes" class="form-label"></label>
+                        <textarea asp-for="Form.LessonNotes" class="form-control" rows="8" placeholder="Include objectives, activities, and exit ticket notes."></textarea>
+                        <span asp-validation-for="Form.LessonNotes" class="text-danger"></span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Generate summary</button>
+                        <a asp-action="Summary" class="btn btn-outline-secondary">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Latest result</h2>
+                @if (Model.GeneratedSummary is { } summary)
+                {
+                    <p class="text-muted mb-1">Generated @summary.GeneratedAt.ToLocalTime(): @summary.Model</p>
+                    @foreach (var summarySection in summary.Sections)
+                    {
+                        <h3 class="h6 mt-3">@summarySection.Title</h3>
+                        <ul class="mb-0">
+                            @foreach (var point in summarySection.Points)
+                            {
+                                <li>@point</li>
+                            }
+                        </ul>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted mb-0">Run a summary to see the structured output here.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="card shadow-sm mt-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h2 class="h5 mb-0">Recent summaries</h2>
+            <span class="text-muted small">Showing last @Model.History.Count entries</span>
+        </div>
+        @if (!Model.History.Any())
+        {
+            <p class="text-muted mb-0">No summaries yet. Generate one to populate this list.</p>
+        }
+        else
+        {
+            <div class="list-group">
+                @foreach (var item in Model.History)
+                {
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>@item.GeneratedAt.ToLocalTime().ToString("g")</strong>
+                            <span class="text-muted small">@item.Model</span>
+                        </div>
+                        <details class="mt-2">
+                            <summary class="small text-muted">View sections</summary>
+                            @foreach (var historySection in item.Sections)
+                            {
+                                <h3 class="h6 mt-3">@historySection.Title</h3>
+                                <ul>
+                                    @foreach (var point in historySection.Points)
+                                    {
+                                        <li>@point</li>
+                                    }
+                                </ul>
+                            }
+                        </details>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
