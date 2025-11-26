@@ -1,3 +1,5 @@
+> [!CAUTION]
+> This is a demo application. Its very buggy, 100% vibe-coded. As a school project. This is now archived for documentation purposes only.
 # RateMyTeacher - Teacher Rating & Leaderboard System
 
 A modern ASP.NET Core 10 MVC application for student-teacher engagement with AI-powered features, ratings, and leaderboards.
